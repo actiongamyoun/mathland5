@@ -173,6 +173,18 @@ body::before {
 .parent-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
 .parent-btn .icon { font-size: 26px; color: var(--ink); }
 
+/* 헤더 안 인라인 버전 (홈 화면 등 칩과 겹치는 화면용) */
+.parent-btn-inline {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--rb-purple); border: 3px solid var(--ink); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 0 var(--ink);
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+.parent-btn-inline:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--ink); }
+.parent-btn-inline .icon { font-size: 24px; color: white; }
+
 /* ============ 4. Screens ============ */
 
 /* 0. 시작 */
