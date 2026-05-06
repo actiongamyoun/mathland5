@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>매쓰랜드 5 — 나만의 수학 월드</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Jua&display=swap" rel="stylesheet" />
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- 0. 시작 화면 -->
+  <div class="screen active" id="start-screen">
+    <button class="parent-btn" data-action="parent" title="부모 모드">
+      <i class="icon">family_restroom</i>
+    </button>
+
+    <div class="logo-block">
+      <div class="logo">MATHLAND 5</div>
+      <div class="logo-sub">★ 나만의 수학 월드 ★</div>
+    </div>
+
+    <div class="tagline">스스로 키우는 똑똑이 모험!</div>
+
+    <div class="pixel-char-wrap">
+      <span class="sparkle">✨</span>
+      <span class="sparkle">⭐</span>
+      <span class="sparkle">✨</span>
+      <svg class="pixel-char" viewBox="0 0 16 16" shape-rendering="crispEdges">
+        <rect x="5" y="2" width="6" height="1" fill="#ff4ba0"/>
+        <rect x="4" y="3" width="8" height="1" fill="#ff4ba0"/>
+        <rect x="5" y="4" width="6" height="3" fill="#ffd9b3"/>
+        <rect x="6" y="5" width="1" height="1" fill="#1a1a2e"/>
+        <rect x="9" y="5" width="1" height="1" fill="#1a1a2e"/>
+        <rect x="7" y="6" width="2" height="1" fill="#ff4ba0"/>
+        <rect x="4" y="7" width="8" height="4" fill="#1a7aff"/>
+        <rect x="5" y="8" width="6" height="1" fill="#ffd23f"/>
+        <rect x="3" y="8" width="1" height="3" fill="#1a7aff"/>
+        <rect x="12" y="8" width="1" height="3" fill="#1a7aff"/>
+        <rect x="5" y="11" width="2" height="3" fill="#0e4ea8"/>
+        <rect x="9" y="11" width="2" height="3" fill="#0e4ea8"/>
+        <rect x="5" y="14" width="2" height="1" fill="#1a1a2e"/>
+        <rect x="9" y="14" width="2" height="1" fill="#1a1a2e"/>
+      </svg>
+    </div>
+
+    <div class="start-btns">
+      <button class="btn btn-yellow btn-mega" data-action="continue">
+        <i class="icon">play_arrow</i> 이어하기
+      </button>
+      <button class="btn btn-pink btn-mega" data-action="diagnostic">
+        <i class="icon">stars</i> 진단평가
+      </button>
+    </div>
+  </div>
+
+  <!-- 1. 홈 -->
+  <div class="screen" id="home-screen">
+    <button class="parent-btn" data-action="parent" title="부모 모드">
+      <i class="icon">family_restroom</i>
+    </button>
+
+    <div class="home-top">
+      <div class="player-card">
+        <div class="avatar-mini">M</div>
+        <div class="info">
+          <div class="name">우리 친구</div>
+          <div class="level">LV.<span id="player-level">1</span></div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-chip coin"><i class="icon">monetization_on</i><span id="coin-count">0</span></div>
+        <div class="stat-chip gem"><i class="icon">diamond</i><span id="gem-count">0</span></div>
+      </div>
+    </div>
+
+    <div class="world">
+      <div class="sun"></div>
+      <div class="clouds"></div>
+      <div class="ground"></div>
+
+      <div class="world-canvas">
+        <svg class="avatar" viewBox="0 0 16 16" shape-rendering="crispEdges">
+          <rect x="5" y="2" width="6" height="1" fill="#ff4ba0"/>
+          <rect x="4" y="3" width="8" height="1" fill="#ff4ba0"/>
+          <rect x="5" y="4" width="6" height="3" fill="#ffd9b3"/>
+          <rect x="6" y="5" width="1" height="1" fill="#1a1a2e"/>
+          <rect x="9" y="5" width="1" height="1" fill="#1a1a2e"/>
+          <rect x="7" y="6" width="2" height="1" fill="#ff4ba0"/>
+          <rect x="4" y="7" width="8" height="4" fill="#1a7aff"/>
+          <rect x="5" y="8" width="6" height="1" fill="#ffd23f"/>
+          <rect x="3" y="8" width="1" height="3" fill="#1a7aff"/>
+          <rect x="12" y="8" width="1" height="3" fill="#1a7aff"/>
+          <rect x="5" y="11" width="2" height="3" fill="#0e4ea8"/>
+          <rect x="9" y="11" width="2" height="3" fill="#0e4ea8"/>
+          <rect x="5" y="14" width="2" height="1" fill="#1a1a2e"/>
+          <rect x="9" y="14" width="2" height="1" fill="#1a1a2e"/>
+        </svg>
+      </div>
+
+      <!-- 월드 아이템 -->
+      <svg class="world-item locked" data-unlock="3" style="left: 8%; bottom: 24%;" width="64" viewBox="0 0 16 16" shape-rendering="crispEdges">
+        <rect x="7" y="9" width="2" height="6" fill="#7a4a1f"/>
+        <rect x="4" y="3" width="8" height="6" fill="#2ecc40"/>
+        <rect x="5" y="2" width="6" height="1" fill="#2ecc40"/>
+        <rect x="3" y="5" width="1" height="3" fill="#2ecc40"/>
+        <rect x="12" y="5" width="1" height="3" fill="#2ecc40"/>
+        <rect x="6" y="5" width="1" height="1" fill="#1d8a2a"/>
+        <rect x="9" y="6" width="1" height="1" fill="#1d8a2a"/>
+      </svg>
+      <svg class="world-item locked" data-unlock="6" style="right: 10%; bottom: 24%;" width="100" viewBox="0 0 20 16" shape-rendering="crispEdges">
+        <rect x="3" y="6" width="14" height="8" fill="#ffd9b3"/>
+        <rect x="2" y="5" width="16" height="1" fill="#a06cd5"/>
+        <rect x="3" y="4" width="14" height="1" fill="#a06cd5"/>
+        <rect x="5" y="3" width="10" height="1" fill="#a06cd5"/>
+        <rect x="7" y="2" width="6" height="1" fill="#a06cd5"/>
+        <rect x="9" y="9" width="2" height="5" fill="#7a4a1f"/>
+        <rect x="5" y="8" width="3" height="3" fill="#1a7aff"/>
+        <rect x="12" y="8" width="3" height="3" fill="#1a7aff"/>
+        <rect x="6" y="8" width="1" height="3" fill="#87ceeb"/>
+        <rect x="13" y="8" width="1" height="3" fill="#87ceeb"/>
+      </svg>
+      <svg class="world-item locked" data-unlock="1" style="left: 22%; bottom: 18%;" width="32" viewBox="0 0 16 16" shape-rendering="crispEdges">
+        <rect x="7" y="9" width="2" height="6" fill="#2ecc40"/>
+        <rect x="6" y="6" width="4" height="3" fill="#ff4ba0"/>
+        <rect x="7" y="7" width="2" height="1" fill="#ffd23f"/>
+        <rect x="5" y="7" width="1" height="1" fill="#ff4ba0"/>
+        <rect x="10" y="7" width="1" height="1" fill="#ff4ba0"/>
+      </svg>
+      <svg class="world-item locked" data-unlock="2" style="right: 28%; bottom: 18%;" width="32" viewBox="0 0 16 16" shape-rendering="crispEdges">
+        <rect x="7" y="9" width="2" height="6" fill="#2ecc40"/>
+        <rect x="6" y="6" width="4" height="3" fill="#ffd23f"/>
+        <rect x="7" y="7" width="2" height="1" fill="#ff4ba0"/>
+        <rect x="5" y="7" width="1" height="1" fill="#ffd23f"/>
+        <rect x="10" y="7" width="1" height="1" fill="#ffd23f"/>
+      </svg>
+      <svg class="world-item locked" data-unlock="4" style="left: 38%; bottom: 20%;" width="80" viewBox="0 0 32 12" shape-rendering="crispEdges">
+        <rect x="0" y="4" width="32" height="2" fill="#a06cd5"/>
+        <rect x="0" y="8" width="32" height="2" fill="#a06cd5"/>
+        <rect x="2" y="2" width="2" height="10" fill="#7a4a1f"/>
+        <rect x="10" y="2" width="2" height="10" fill="#7a4a1f"/>
+        <rect x="18" y="2" width="2" height="10" fill="#7a4a1f"/>
+        <rect x="26" y="2" width="2" height="10" fill="#7a4a1f"/>
+      </svg>
+      <svg class="world-item locked" data-unlock="5" style="right: 4%; bottom: 19%;" width="55" viewBox="0 0 16 16" shape-rendering="crispEdges">
+        <rect x="3" y="6" width="10" height="8" fill="#7a4a1f"/>
+        <rect x="3" y="6" width="10" height="2" fill="#ffd23f"/>
+        <rect x="7" y="9" width="2" height="2" fill="#ffd23f"/>
+        <rect x="3" y="5" width="10" height="1" fill="#5a3515"/>
+      </svg>
+      <svg class="world-item locked" data-unlock="8" style="left: 50%; top: 22%;" width="44" viewBox="0 0 16 16" shape-rendering="crispEdges">
+        <rect x="7" y="2" width="2" height="2" fill="#ffd23f"/>
+        <rect x="5" y="4" width="6" height="2" fill="#ffd23f"/>
+        <rect x="3" y="6" width="10" height="2" fill="#ffd23f"/>
+        <rect x="5" y="8" width="6" height="2" fill="#ffd23f"/>
+        <rect x="4" y="10" width="3" height="2" fill="#ffd23f"/>
+        <rect x="9" y="10" width="3" height="2" fill="#ffd23f"/>
+      </svg>
+      <svg class="world-item locked" data-unlock="10" style="left: 18%; bottom: 13%;" width="60" viewBox="0 0 16 16" shape-rendering="crispEdges">
+        <rect x="4" y="6" width="6" height="4" fill="#c79b1f"/>
+        <rect x="3" y="5" width="2" height="2" fill="#c79b1f"/>
+        <rect x="9" y="5" width="2" height="2" fill="#c79b1f"/>
+        <rect x="3" y="4" width="1" height="2" fill="#7a4a1f"/>
+        <rect x="10" y="4" width="1" height="2" fill="#7a4a1f"/>
+        <rect x="4" y="7" width="1" height="1" fill="#1a1a2e"/>
+        <rect x="9" y="7" width="1" height="1" fill="#1a1a2e"/>
+        <rect x="6" y="8" width="2" height="1" fill="#ff4ba0"/>
+        <rect x="10" y="9" width="3" height="2" fill="#c79b1f"/>
+        <rect x="4" y="10" width="2" height="3" fill="#c79b1f"/>
+        <rect x="8" y="10" width="2" height="3" fill="#c79b1f"/>
+      </svg>
+    </div>
+
+    <div class="home-bottom">
+      <div class="mission-card">
+        <div class="label">DAILY MISSION</div>
+        <div class="text" id="mission-text">문제 0/5 풀기</div>
+        <div class="progress"><div class="progress-bar" id="mission-bar" style="width: 0%"></div></div>
+      </div>
+      <button class="btn btn-pink btn-big" data-action="study" style="min-width: 180px;">
+        <i class="icon">school</i>
+        공부하러!
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. 단원 선택 -->
+  <div class="screen" id="unit-select-screen">
+    <div class="top-bar">
+      <button class="back" data-action="back-home"><i class="icon">arrow_back</i></button>
+      <div class="title">단원 선택</div>
+    </div>
+    <div class="ai-banner">
+      <div class="icon-circle"><i class="icon">auto_awesome</i></div>
+      <div class="ai-text">
+        <div class="ai-label">AI RECOMMEND</div>
+        <div class="ai-msg" id="ai-recommend-text">먼저 진단평가를 해주세요!</div>
+      </div>
+      <button class="btn btn-yellow" data-action="ai-recommend">시작</button>
+    </div>
+    <div class="unit-grid" id="unit-grid"></div>
+  </div>
+
+  <!-- 3. 문제 풀이 -->
+  <div class="screen" id="problem-screen">
+    <div class="problem-header">
+      <button class="back" data-action="back-home"><i class="icon">close</i></button>
+      <div class="problem-progress" id="problem-progress"></div>
+      <div class="stat-chip coin"><i class="icon">monetization_on</i><span id="coin-mini">0</span></div>
+    </div>
+
+    <div class="problem-body">
+      <div class="problem-panel">
+        <div class="problem-tags-row" id="problem-tags-row"></div>
+        <div class="problem-text" id="problem-text">문제</div>
+        <div class="problem-equation" id="problem-equation"></div>
+        <div class="problem-hint-area" id="hint-area"></div>
+      </div>
+
+      <div class="canvas-area">
+        <div class="canvas-toolbar">
+          <button class="tool-btn active" data-tool="pen"><i class="icon">edit</i></button>
+          <button class="tool-btn" data-tool="eraser"><i class="icon">ink_eraser</i></button>
+          <button class="tool-btn" data-tool="undo"><i class="icon">undo</i></button>
+          <button class="tool-btn" data-tool="clear"><i class="icon">refresh</i></button>
+          <div class="stroke-size">
+            <button class="stroke-dot" data-size="2"><span style="width:6px;height:6px;"></span></button>
+            <button class="stroke-dot active" data-size="4"><span style="width:10px;height:10px;"></span></button>
+            <button class="stroke-dot" data-size="8"><span style="width:14px;height:14px;"></span></button>
+          </div>
+          <div class="canvas-helper">
+            <i class="icon" style="font-size: 18px;">draw</i>
+            여기에 풀어보세요
+          </div>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="drawing-canvas"></canvas>
+          <div class="submit-bar">
+            <button class="btn btn-ghost" data-action="hint-request"><i class="icon">help</i> 힌트</button>
+            <button class="btn btn-blue" data-action="submit"><i class="icon">check</i> 제출</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 부모 PIN -->
+  <div class="screen" id="parent-pin-screen">
+    <div class="pin-modal">
+      <div style="width:70px;height:70px;border-radius:18px;background:var(--rb-purple);border:4px solid var(--ink);box-shadow:0 5px 0 var(--ink);display:flex;align-items:center;justify-content:center;margin:0 auto;">
+        <i class="icon" style="font-size: 40px; color: white;">lock</i>
+      </div>
+      <h2 style="margin: 14px 0 4px; font-family: 'Jua', sans-serif; font-size: 24px;">부모 모드</h2>
+      <p style="color: var(--ink-soft); margin: 0;">4자리 비밀번호를 입력하세요</p>
+      <div class="pin-display">
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div id="pin-error" style="color: var(--rb-red); font-size: 13px; height: 18px; margin-bottom: 8px; font-weight: 700;"></div>
+      <div class="pin-pad">
+        <button class="pin-key">1</button>
+        <button class="pin-key">2</button>
+        <button class="pin-key">3</button>
+        <button class="pin-key">4</button>
+        <button class="pin-key">5</button>
+        <button class="pin-key">6</button>
+        <button class="pin-key">7</button>
+        <button class="pin-key">8</button>
+        <button class="pin-key">9</button>
+        <button class="pin-key del" data-action="back-home"><i class="icon">close</i></button>
+        <button class="pin-key">0</button>
+        <button class="pin-key del" data-key="del"><i class="icon">backspace</i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 부모 대시보드 -->
+  <div class="screen" id="parent-screen">
+    <div class="top-bar">
+      <button class="back" data-action="back-home"><i class="icon">arrow_back</i></button>
+      <div class="title">부모 대시보드</div>
+      <button class="btn btn-red" style="padding: 8px 14px; font-size: 13px;" data-action="reset"><i class="icon">refresh</i> 초기화</button>
+    </div>
+    <div class="dash-content">
+      <div class="dash-grid">
+        <div class="dash-card c1">
+          <span class="label">TODAY</span>
+          <span class="value" id="dash-today">0개</span>
+          <span class="sub">정답률 <span id="dash-rate">-</span></span>
+        </div>
+        <div class="dash-card c2">
+          <span class="label">TOTAL</span>
+          <span class="value" id="dash-total">0개</span>
+          <span class="sub">레벨 <span id="dash-level">1</span></span>
+        </div>
+        <div class="dash-card c3">
+          <span class="label">REVIEW</span>
+          <span class="value" id="dash-review-count" style="color: var(--rb-red);">0건</span>
+          <span class="sub">AI 불확실 항목</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3><i class="icon" style="color: var(--rb-purple);">psychology</i> 아이의 사고 기록 <span class="badge" id="thinking-badge" style="background: var(--rb-purple);">0</span></h3>
+        <div id="thinking-log-content"></div>
+      </div>
+
+      <div class="panel">
+        <h3><i class="icon" style="color: var(--rb-cyan);">menu_book</i> 오늘의 회고</h3>
+        <div id="reflection-log-content"></div>
+      </div>
+
+      <div class="panel">
+        <h3><i class="icon" style="color: var(--rb-red);">fact_check</i> 검수 필요 <span class="badge" id="review-badge">0</span></h3>
+        <div id="review-list-content"></div>
+      </div>
+
+      <div class="panel">
+        <h3><i class="icon" style="color: var(--rb-blue);">insights</i> 단원별 수준</h3>
+        <div id="unit-progress-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 채점 결과 모달 -->
+  <div class="modal-overlay" id="result-modal">
+    <div class="modal" id="result-modal-content"></div>
+  </div>
+</div>
+
+<!-- ============ 모듈 로드 (순서 중요) ============ -->
+<!-- 데이터 -->
+<script src="data/units.js"></script>
+<script src="data/problems_mix.js"></script>
+<script src="data/problems_div.js"></script>
+<script src="data/problems_rule.js"></script>
+<script src="data/problems_frac.js"></script>
+<script src="data/problems_mult.js"></script>
+<script src="data/problems_area.js"></script>
+<script src="data/index.js"></script>
+
+<!-- 코어 모듈 -->
+<script src="js/state.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/session.js"></script>
+<script src="js/parent.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
