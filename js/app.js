@@ -879,11 +879,29 @@ function boot() {
   // 모바일 더블탭 줌 방지 (버튼/카드 위에서는 제외)
   let lastTouch = 0;
   document.addEventListener('touchend', e => {
-    if (e.target.closest('button, input, textarea, .pin-key, .tool-btn, .stroke-dot, .unit-card, .review-item, .thinking-log-item')) return;
+    if (e.target.closest('button, input, textarea, .pin-key, .tool-btn, .stroke-dot, .unit-card, .review-item, .thinking-log-item, .conf-btn, .result-cell')) return;
     const now = Date.now();
     if (now - lastTouch <= 300) e.preventDefault();
     lastTouch = now;
   }, { passive: false });
+
+  // PWA 앱 모드인지 감지 (홈에 추가해서 실행한 경우)
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                        window.navigator.standalone === true;
+  if (isStandalone) {
+    document.body.classList.add('pwa-mode');
+  }
+
+  // iOS Safari + 브라우저 모드면 "홈에 추가" 안내 (24시간에 한 번만)
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isSafari = /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent);
+  if (isIOS && isSafari && !isStandalone) {
+    const lastShown = parseInt(localStorage.getItem('pwa_hint_shown') || '0');
+    if (Date.now() - lastShown > 24 * 60 * 60 * 1000) {
+      setTimeout(showAddToHomeHint, 1500);
+      localStorage.setItem('pwa_hint_shown', String(Date.now()));
+    }
+  }
 
   const state = window.MATHLAND_STATE;
   if (state.totalSolved > 0 || state.diagnosticDone) {
@@ -892,6 +910,40 @@ function boot() {
     window.show('start-screen');
   }
   window.saveState();
+}
+
+// "홈 화면에 추가" 안내 모달
+function showAddToHomeHint() {
+  const modal = document.getElementById('result-modal');
+  const content = document.getElementById('result-modal-content');
+  content.innerHTML = `
+    <div class="result-icon" style="background: linear-gradient(135deg, var(--rb-cyan), var(--rb-blue));">
+      <i class="icon">add_to_home_screen</i>
+    </div>
+    <h2>홈 화면에 추가해요!</h2>
+    <p style="margin: 0 0 16px;">
+      더 큰 화면으로 편하게 쓸 수 있어요.<br>
+      <b>앱처럼 실행</b>되고 사파리 주소창도 안 보여요!
+    </p>
+    <div style="background: var(--paper-soft); border: 3px solid var(--ink); border-radius: 12px; padding: 14px; margin-bottom: 14px; text-align: left; box-shadow: 0 3px 0 var(--ink);">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <span style="background: var(--rb-blue); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;">1</span>
+        <span style="font-size: 14px; font-weight: 700;">하단의 <i class="icon" style="font-size: 18px; vertical-align: -3px;">ios_share</i> 공유 버튼을 눌러요</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <span style="background: var(--rb-blue); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;">2</span>
+        <span style="font-size: 14px; font-weight: 700;">"홈 화면에 추가"를 선택해요</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="background: var(--rb-blue); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;">3</span>
+        <span style="font-size: 14px; font-weight: 700;">"추가" 버튼을 누르면 끝!</span>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-blue btn-big" data-action="close-modal">알겠어요</button>
+    </div>
+  `;
+  modal.classList.add('active');
 }
 
 // DOM 준비된 후 부팅

@@ -38,6 +38,7 @@
 /* ============ 2. Reset & Base ============ */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+html { height: 100dvh; height: -webkit-fill-available; }
 body {
   font-family: 'Jua', 'Pretendard', -apple-system, sans-serif;
   background:
@@ -47,6 +48,10 @@ body {
   color: var(--ink);
   user-select: none; -webkit-user-select: none;
   overscroll-behavior: none;
+  /* 사파리 하단 툴바 안전영역 */
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
 }
 .game-font { font-family: 'Press Start 2P', monospace; letter-spacing: 1px; }
 body::before {
@@ -62,6 +67,8 @@ body::before {
 
 #app {
   width: 100vw; height: 100vh;
+  height: 100dvh;
+  height: -webkit-fill-available;
   display: flex; align-items: center; justify-content: center;
   position: relative; z-index: 1;
 }
@@ -80,7 +87,14 @@ body::before {
 
 @media (max-width: 1100px), (max-height: 820px) {
   #app { padding: 0; }
-  .screen { max-height: 100vh; border-radius: 0; border: none; box-shadow: none; }
+  .screen {
+    max-height: 100vh;
+    max-height: 100dvh;
+    border-radius: 0; border: none; box-shadow: none;
+    /* iOS 사파리 하단 툴바 회피 */
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-top: env(safe-area-inset-top);
+  }
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
