@@ -105,15 +105,13 @@ function loadCurrentProblem() {
   document.getElementById('hint-area').innerHTML = '';
   s.hintLevel = 0;
 
-  // 진행 점
+  // 진행 점 (정답/오답 안 보이게 — 푼 것만 표시)
   const prog = document.getElementById('problem-progress');
   prog.innerHTML = '';
   for (let i = 0; i < s.problems.length; i++) {
     const d = document.createElement('div');
     d.className = 'dot';
-    if (i < s.index) {
-      d.classList.add(s.results[i] === 'correct' ? 'done' : (s.results[i] === 'wrong' ? 'wrong' : 'done'));
-    }
+    if (i < s.index) d.classList.add('done');     // 푼 문제 (색은 회색→초록)
     if (i === s.index) d.classList.add('current');
     prog.appendChild(d);
   }
@@ -142,96 +140,81 @@ function submitAnswer() {
   const s = window.SESSION;
   if (!s) return;
   const p = s.problems[s.index];
-  const score = window.scoreAnswer(p, window.hasDrawing());
-  s.results.push(score.result);
 
-  const state = window.MATHLAND_STATE;
-
-  // 단원 마스터리 업데이트
-  const unitId = p.id.split('-')[0];
-  if (state.unitMastery[unitId] === undefined) state.unitMastery[unitId] = 50;
-  if (score.result === 'correct') state.unitMastery[unitId] = Math.min(100, state.unitMastery[unitId] + 8);
-  else if (score.result === 'wrong') state.unitMastery[unitId] = Math.max(0, state.unitMastery[unitId] - 4);
-
-  state.todaySolved++;
-  state.totalSolved++;
-  if (score.result === 'correct') state.todayCorrect++;
-
-  // 푼 문제 기록 (중복 회피용)
-  window.recordSolved(p.id);
-
-  // 검수 큐
-  if (score.result === 'review') {
-    state.reviewQueue.push({
-      id: Date.now() + Math.random(),
-      problemId: p.id,
-      eq: p.eq, answer: p.answer,
-      aiGuess: score.aiAnswer, confidence: score.confidence,
-      unit: unitId, ts: new Date().toISOString()
-    });
+  // 그림이 전혀 없으면 한번 더 물어봄
+  if (!window.hasDrawing()) {
+    if (!confirm('아직 풀이를 적지 않았어요. 정말 다음으로 넘어갈까요?')) return;
   }
 
-  // 보상
-  let coins = 0, gems = 0;
-  if (score.result === 'correct') {
-    coins = 10 + (s.isDiagnostic ? 5 : 0) + (p.level >= 3 ? 5 : 0);  // 분석/창의는 보상 더
-    if (Math.random() < 0.2) gems = 1;
-    state.coins += coins;
-    state.gems += gems;
-    state.player.exp += (5 + p.level * 3);
-    if (state.player.exp >= state.player.level * 50) {
-      state.player.level++;
-      state.player.exp = 0;
-    }
-    state.unlockedItems = Math.min(20, Math.floor(state.totalSolved));
-  }
-
-  window.saveState();
-
-  // 분기:
-  // 1) 정답 + 분석/창의 문제(메타질문 있음) → 사고 모달
-  // 2) 정답 + 도전 가능 → 도전 모달
-  // 3) 정답 + 일반 → 결과 모달
-  // 4) 오답 → 결과 모달 (틀릴 때 "왜 그렇게 생각했어?" 묻기)
-  // 5) 검수 → 결과 모달 (다음 문제로)
-
-  if (score.result === 'correct') {
-    spawnFloatingCoins(coins);
-    spawnConfetti();
-    if (p.metaQuestion) {
-      // 메타 질문이 있으면 먼저 묻기
-      showThinkingModal({
-        title: '잘 풀었어! 한 가지 더 물어봐도 돼?',
-        question: p.metaQuestion,
-        problemId: p.id, eq: p.eq, level: p.level, unit: unitId,
-        onDone: () => {
-          if (window.shouldShowChallenge()) showChallenge();
-          else showResultModal(score, coins, gems, p);
-        }
-      });
-      return;
-    }
-    if (window.shouldShowChallenge()) {
-      showChallenge();
-      return;
-    }
-    showResultModal(score, coins, gems, p);
-    return;
-  }
-
-  if (score.result === 'wrong') {
-    // 오답이면 사고 질문 — 선생님 강조 사항: "왜 그렇게 생각했어?"
-    showThinkingModal({
-      title: '괜찮아! 한번 같이 들여다볼까?',
-      question: '왜 그렇게 풀어야 한다고 생각했어? 적어보면 다음에 더 잘 풀 수 있어.',
-      problemId: p.id, eq: p.eq, level: p.level, unit: unitId,
-      onDone: () => showResultModal(score, coins, gems, p),
-    });
-    return;
-  }
-
-  showResultModal(score, coins, gems, p);
+  // 채점은 나중에 (세션 끝). 지금은 자신감 체크만.
+  showConfidenceModal(p);
 }
+
+// ============ 자신감 체크 모달 ============
+function showConfidenceModal(problem) {
+  const modal = document.getElementById('result-modal');
+  const content = document.getElementById('result-modal-content');
+  content.innerHTML = `
+    <div class="result-icon" style="background: linear-gradient(135deg, var(--rb-cyan), var(--rb-blue));">
+      <i class="icon">psychology</i>
+    </div>
+    <h2>이 문제, 어땠어?</h2>
+    <p>정답은 다 풀고 나서 함께 봐요.<br>지금은 너의 느낌만 알려줘!</p>
+
+    <div class="confidence-options">
+      <button class="conf-btn sure" data-conf="sure">
+        <span class="conf-emoji">😎</span>
+        <span class="conf-text">
+          <span class="conf-main">확실해요!</span>
+          <span class="conf-sub">"이거 맞을 거야"</span>
+        </span>
+      </button>
+      <button class="conf-btn unsure" data-conf="unsure">
+        <span class="conf-emoji">🤔</span>
+        <span class="conf-text">
+          <span class="conf-main">조금 헷갈려요</span>
+          <span class="conf-sub">"맞나 아닌가..."</span>
+        </span>
+      </button>
+      <button class="conf-btn guess" data-conf="guess">
+        <span class="conf-emoji">😅</span>
+        <span class="conf-text">
+          <span class="conf-main">그냥 찍었어요</span>
+          <span class="conf-sub">"잘 모르겠어"</span>
+        </span>
+      </button>
+    </div>
+  `;
+  modal.classList.add('active');
+}
+
+// 자신감 선택 → 다음 문제로
+window.handleConfidenceChoice = function(conf) {
+  const s = window.SESSION;
+  if (!s) return;
+  s.confidence.push(conf);
+  closeResultModal();
+  s.index++;
+  if (s.index >= s.problems.length) endSession();
+  else loadCurrentProblem();
+};
+
+// 잠긴 힌트 안내
+window.showHintLockedInfo = function() {
+  const modal = document.getElementById('result-modal');
+  const content = document.getElementById('result-modal-content');
+  content.innerHTML = `
+    <div class="result-icon" style="background: linear-gradient(135deg, #d4d6e3, #a4a8bc);">
+      <i class="icon">lock</i>
+    </div>
+    <h2>지금은 힌트를 못 써!</h2>
+    <p>모든 문제를 다 푼 다음, <b>틀린 문제만 다시 풀 때</b><br>힌트가 열려요.<br>지금은 혼자 풀어보는 시간이야 💪</p>
+    <div class="modal-btns">
+      <button class="btn btn-blue btn-big" data-action="close-modal">알겠어!</button>
+    </div>
+  `;
+  modal.classList.add('active');
+};
 
 // ============ "왜 그렇게 생각했어?" 사고 모달 ============
 function showThinkingModal({ title, question, problemId, eq, level, unit, onDone }) {
@@ -406,36 +389,212 @@ function revealAnswer() {
   }, 1500);
 }
 
-// ============ 세션 종료 → 회고 화면 ============
+// ============ 세션 종료 → 채점 → 결과 화면 ============
 function endSession() {
   const s = window.SESSION;
   if (!s) return;
-  const correctCount = s.results.filter(r => r === 'correct').length;
-  const total = s.results.length;
-
-  if (s.isDiagnostic) {
-    window.MATHLAND_STATE.diagnosticDone = true;
-    window.saveState();
-  }
 
   closeResultModal();
 
-  // 진단평가는 회고 없이 바로 결과
+  // 이제서야 채점!
+  const state = window.MATHLAND_STATE;
+  const results = [];      // 'correct' | 'wrong' | 'review'
+  let correctCount = 0;
+  let wrongCount = 0;
+
+  for (let i = 0; i < s.problems.length; i++) {
+    const p = s.problems[i];
+    // 자신감이 'guess'(찍음)면 채점에 영향 — 단, 실제 채점은 그대로
+    // 캔버스 그림 데이터는 이미 사라졌으니, 풀이 시도가 있었음을 가정해서 채점
+    const score = window.scoreAnswer(p, true);
+    results.push(score.result);
+
+    if (score.result === 'correct') correctCount++;
+    else if (score.result === 'wrong') wrongCount++;
+
+    // 단원 마스터리 업데이트
+    const unitId = p.id.split('-')[0];
+    if (state.unitMastery[unitId] === undefined) state.unitMastery[unitId] = 50;
+    if (score.result === 'correct') state.unitMastery[unitId] = Math.min(100, state.unitMastery[unitId] + 6);
+    else if (score.result === 'wrong') state.unitMastery[unitId] = Math.max(0, state.unitMastery[unitId] - 3);
+
+    // 푼 문제 기록
+    window.recordSolved(p.id);
+
+    // 통계
+    state.todaySolved++;
+    state.totalSolved++;
+    if (score.result === 'correct') state.todayCorrect++;
+
+    // 검수 큐 (memo형 등)
+    if (score.result === 'review') {
+      state.reviewQueue.push({
+        id: Date.now() + Math.random() + i,
+        problemId: p.id,
+        eq: p.eq, answer: p.answer,
+        aiGuess: score.aiAnswer, confidence: score.confidence,
+        unit: unitId, ts: new Date().toISOString()
+      });
+    }
+  }
+
+  // 보상 계산 (단순화 버전)
+  // 1. 정답 1개 = +10 (단계 3·4 +5 추가)
+  // 2. 자신감 일치 보너스 = +3 (sure→정답 / guess→오답이면 정직)
+  // 3. 완주 보상 = +20 (10문제 다 풀어냄)
+  let earnedCoins = 0;
+  let earnedGems = 0;
+  let metaMatchCount = 0;     // 자신감 정확도용
+  let metaTotalCount = 0;
+  for (let i = 0; i < s.problems.length; i++) {
+    const r = results[i];
+    const conf = s.confidence[i];
+    const p = s.problems[i];
+
+    if (r === 'correct') {
+      earnedCoins += 10;
+      if (p.level >= 3) earnedCoins += 5;
+    }
+
+    // 자신감 정확도 계산
+    if (conf && (r === 'correct' || r === 'wrong')) {
+      metaTotalCount++;
+      // sure → correct, guess → wrong 일 때 "정직"
+      if ((conf === 'sure' && r === 'correct') ||
+          (conf === 'guess' && r === 'wrong') ||
+          (conf === 'unsure')) {  // unsure는 어느 쪽이든 OK (자기 인식 정확)
+        metaMatchCount++;
+        earnedCoins += 3;
+      }
+    }
+  }
+
+  // 완주 보상
+  earnedCoins += 20;
+  if (correctCount === s.problems.length) earnedGems += 1;  // 만점이면 보석
+
+  state.coins += earnedCoins;
+  state.gems += earnedGems;
+  state.player.exp += earnedCoins;
+  if (state.player.exp >= state.player.level * 50) {
+    state.player.level++;
+    state.player.exp = state.player.exp - state.player.level * 50;
+  }
+  state.unlockedItems = Math.min(20, Math.floor(state.totalSolved / 2));
+
+  if (s.isDiagnostic) state.diagnosticDone = true;
+
+  // 세션 결과 데이터 저장 (다음 라운드의 오답노트가 사용)
+  s.results = results;
+  s.metaAccuracy = metaTotalCount > 0 ? Math.round(metaMatchCount / metaTotalCount * 100) : null;
+  s.earnedCoins = earnedCoins;
+  s.earnedGems = earnedGems;
+
+  window.saveState();
+
+  // 결과 화면으로
+  showSessionResult();
+}
+
+// ============ 세션 결과 화면 ============
+function showSessionResult() {
+  const s = window.SESSION;
+  if (!s) return;
+
+  const correctCount = s.results.filter(r => r === 'correct').length;
+  const wrongCount = s.results.filter(r => r === 'wrong').length;
+  const total = s.problems.length;
+
+  document.getElementById('result-correct').textContent = correctCount;
+  document.getElementById('result-wrong').textContent = wrongCount;
+  document.getElementById('result-total').textContent = total;
+
+  // 자신감 정확도 메시지
+  const acc = s.metaAccuracy;
+  let metaText;
+  if (acc === null) {
+    metaText = '자신감 데이터가 부족해요.';
+  } else if (acc >= 80) {
+    metaText = `<span class="pct-num">${acc}%</span> 너는 너 자신을 잘 알고 있구나! 자신 있을 때와 헷갈릴 때를 정확히 느꼈어.`;
+  } else if (acc >= 50) {
+    metaText = `<span class="pct-num">${acc}%</span> 자신감과 결과가 어느 정도 맞아. 좀 더 정확해질 수 있어!`;
+  } else {
+    metaText = `<span class="pct-num">${acc}%</span> 생각보다 결과가 다르게 나왔네. 다음엔 더 신중히 살펴볼까?`;
+  }
+  document.getElementById('meta-accuracy-text').innerHTML = metaText;
+
+  // 한눈에 보기 그리드
+  const cells = document.getElementById('result-cells');
+  cells.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const r = s.results[i];
+    const conf = s.confidence[i];
+    const cell = document.createElement('div');
+
+    let cellClass = 'result-cell ';
+    let icon = '';
+    let confMark = '';
+
+    // 자신없는데 정답 = unsure (오답노트에서 다시 보기)
+    // 정답 = correct
+    // 오답 = wrong
+    if (r === 'correct' && conf === 'guess') {
+      cellClass += 'unsure';
+      icon = '❓';   // 찍어서 맞은 것
+    } else if (r === 'correct') {
+      cellClass += 'correct';
+      icon = '✅';
+    } else if (r === 'wrong') {
+      cellClass += 'wrong review-needed';
+      icon = '❌';
+    } else {
+      cellClass += 'unsure';
+      icon = '🔍';   // review (검수 대기)
+    }
+
+    // 자신감 마크
+    if (conf === 'sure') confMark = '😎';
+    else if (conf === 'unsure') confMark = '🤔';
+    else if (conf === 'guess') confMark = '😅';
+
+    cell.className = cellClass;
+    cell.innerHTML = `
+      ${confMark ? `<span class="conf-mark">${confMark}</span>` : ''}
+      <span class="ico">${icon}</span>
+      <span class="num">${i + 1}</span>
+    `;
+    cells.appendChild(cell);
+  }
+
+  window.show('session-result-screen');
+
+  // 약한 콘페티 (성취감)
+  if (correctCount > total / 2) spawnConfetti();
+}
+
+// 결과 화면 → 회고 화면
+window.toReflection = function() {
+  const s = window.SESSION;
+  if (!s) return;
+
+  // 진단평가는 회고 없이 바로 끝
   if (s.isDiagnostic) {
-    showFinalSummary(correctCount, total, true);
+    showFinalSummary(s.results.filter(r => r === 'correct').length, s.problems.length, true);
     return;
   }
 
   // 오늘 회고가 이미 있으면 건너뛰고 결과만
   const todayDone = window.MATHLAND_STATE.reflections.find(r => r.date === window.todayKey());
   if (todayDone) {
-    showFinalSummary(correctCount, total, false);
+    showFinalSummary(s.results.filter(r => r === 'correct').length, s.problems.length, false);
     return;
   }
 
-  // 회고 화면
-  showReflectionScreen(correctCount, total);
-}
+  showReflectionScreen(
+    s.results.filter(r => r === 'correct').length,
+    s.problems.length
+  );
+};
 
 function showReflectionScreen(correctCount, total) {
   const s = window.SESSION;
@@ -601,6 +760,14 @@ document.body.addEventListener('click', e => {
     return;
   }
 
+  // 자신감 버튼 (sure / unsure / guess)
+  const confBtn = e.target.closest('.conf-btn');
+  if (confBtn) {
+    e.preventDefault();
+    window.handleConfidenceChoice(confBtn.dataset.conf);
+    return;
+  }
+
   // 핀패드
   const pinKey = e.target.closest('.pin-key');
   if (pinKey && !pinKey.dataset.action) {
@@ -666,6 +833,15 @@ function handleAction(action, target) {
     case 'hint-request':
       if (!window.SESSION) return;
       showNextHint();
+      break;
+    case 'hint-locked-info':
+      window.showHintLockedInfo();
+      break;
+    case 'close-modal':
+      closeResultModal();
+      break;
+    case 'to-reflection':
+      window.toReflection();
       break;
     case 'next-problem':
       nextProblem();

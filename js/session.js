@@ -46,11 +46,11 @@ function pickProblems(unitId, level, count) {
   return shuffled.slice(0, count);
 }
 
-// 단원 학습 세션 시작 (단원별 13문제 균형 출제)
+// 단원 학습 세션 시작 (단원별 10문제 균형 출제)
 window.startUnitSession = function(unitId) {
   const dist = [
-    { level: 1, count: 3 },  // 이해
-    { level: 2, count: 4 },  // 적용
+    { level: 1, count: 2 },  // 이해
+    { level: 2, count: 3 },  // 적용
     { level: 3, count: 3 },  // 분석
     { level: 4, count: 2 },  // 창의
   ];
@@ -69,8 +69,10 @@ window.startUnitSession = function(unitId) {
     isDiagnostic: false,
     unitId,
     problems,
-    index: 0, results: [],
-    hintLevel: 0, thinkingAnswers: [],
+    index: 0,
+    confidence: [],     // 각 문제의 자신감 ('sure' | 'unsure' | 'guess')
+    hintLevel: 0,
+    thinkingAnswers: [],
     challengePresented: false,
   };
   return true;
@@ -91,7 +93,8 @@ window.startDiagnostic = function() {
 
   window.SESSION = {
     isDiagnostic: true,
-    problems, index: 0, results: [],
+    problems, index: 0,
+    confidence: [],
     hintLevel: 0, thinkingAnswers: [],
     challengePresented: false,
   };
