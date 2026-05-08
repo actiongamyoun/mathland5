@@ -869,3 +869,137 @@ body::before {
   font-size: 11px; font-family: 'Press Start 2P', monospace;
   color: var(--ink-soft); margin-top: 4px;
 }
+
+/* ============ 자신감 체크 (각 문제 풀이 후) ============ */
+.confidence-options {
+  display: flex; flex-direction: column; gap: 10px;
+  margin: 16px 0;
+}
+.conf-btn {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px;
+  border: 3px solid var(--ink); border-radius: var(--r-block);
+  cursor: pointer;
+  background: white;
+  box-shadow: 0 5px 0 var(--ink);
+  text-align: left;
+  font-family: 'Jua', sans-serif;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.conf-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+.conf-btn .conf-emoji { font-size: 32px; flex-shrink: 0; }
+.conf-btn .conf-text { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.conf-btn .conf-main { font-size: 17px; font-weight: 800; }
+.conf-btn .conf-sub { font-size: 12px; color: var(--ink-soft); font-family: 'Pretendard', sans-serif; }
+.conf-btn.sure   { background: linear-gradient(135deg, #d6f8d6, #a8e6a8); }
+.conf-btn.unsure { background: linear-gradient(135deg, #fff5d6, #ffe89e); }
+.conf-btn.guess  { background: linear-gradient(135deg, #ffe0e0, #ffc4c4); }
+
+/* ============ 비활성 힌트 버튼 (잠김) ============ */
+.btn.btn-locked {
+  background: #d4d6e3 !important;
+  color: var(--ink-soft) !important;
+  box-shadow: 0 4px 0 #a4a8bc !important;
+  cursor: not-allowed;
+  position: relative;
+}
+.btn.btn-locked::after {
+  display: none;  /* 빛 효과 제거 */
+}
+.btn.btn-locked .icon { color: var(--ink-soft); }
+
+/* ============ 세션 결과 화면 (10문제 한눈에) ============ */
+#session-result-screen { background: var(--paper-soft); }
+.result-summary-bar {
+  background: white; border: 4px solid var(--ink); border-radius: var(--r-block);
+  box-shadow: 0 6px 0 var(--ink);
+  padding: 16px;
+  margin: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.result-stat {
+  text-align: center;
+  padding: 10px;
+  background: var(--paper-soft);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+}
+.result-stat .num {
+  font-size: 32px; font-weight: 800;
+  font-family: 'Jua', sans-serif; line-height: 1;
+}
+.result-stat .num.green { color: var(--rb-green); }
+.result-stat .num.red   { color: var(--rb-red); }
+.result-stat .num.purple{ color: var(--rb-purple); }
+.result-stat .lbl {
+  font-size: 11px; font-family: 'Press Start 2P', monospace;
+  color: var(--ink-soft); margin-top: 6px;
+}
+
+.result-grid {
+  margin: 0 16px 16px;
+  background: white; border: 4px solid var(--ink); border-radius: var(--r-block);
+  box-shadow: 0 6px 0 var(--ink);
+  padding: 16px;
+}
+.result-grid h3 {
+  margin: 0 0 12px; font-family: 'Jua', sans-serif; font-size: 17px;
+  display: flex; align-items: center; gap: 6px;
+}
+.result-cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 8px;
+}
+.result-cell {
+  aspect-ratio: 1.1;
+  border: 3px solid var(--ink); border-radius: 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 3px 0 var(--ink);
+  font-family: 'Jua', sans-serif;
+  position: relative;
+}
+.result-cell .num { font-size: 14px; font-weight: 800; opacity: 0.7; }
+.result-cell .ico { font-size: 28px; line-height: 1; }
+.result-cell.correct  { background: linear-gradient(135deg, #d6f8d6, #a8e6a8); }
+.result-cell.wrong    { background: linear-gradient(135deg, #ffe0e0, #ffc4c4); }
+.result-cell.unsure   { background: linear-gradient(135deg, #fff5d6, #ffe89e); }
+.result-cell.review-needed { animation: cell-pulse 2s infinite; }
+.result-cell .conf-mark {
+  position: absolute; top: -6px; right: -6px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: white; border: 2px solid var(--ink);
+  font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+@keyframes cell-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+
+.meta-accuracy {
+  background: linear-gradient(135deg, #f0e6ff, #d9c5ff);
+  border: 3px solid var(--ink); border-radius: var(--r-block);
+  padding: 14px 16px;
+  margin: 0 16px 16px;
+  box-shadow: 0 4px 0 var(--ink);
+}
+.meta-accuracy .label {
+  background: var(--rb-purple); color: white;
+  font-family: 'Press Start 2P', monospace; font-size: 10px;
+  padding: 3px 8px; border-radius: 6px;
+  border: 2px solid var(--ink);
+  display: inline-block; margin-bottom: 8px;
+}
+.meta-accuracy .meta-text {
+  font-weight: 700; font-size: 15px; line-height: 1.5;
+  font-family: 'Jua', sans-serif;
+}
+.meta-accuracy .pct-num {
+  font-size: 28px; color: var(--rb-purple);
+  font-family: 'Jua', sans-serif;
+}
+
+.session-result-actions {
+  margin: 0 16px 16px;
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+}
