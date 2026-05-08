@@ -1017,3 +1017,114 @@ body::before {
   margin: 0 16px 16px;
   display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
 }
+
+/* ============ 힌트 버튼 상태 (오답노트 모드) ============ */
+/* 잠김 (한 획 안 그음) */
+.btn.btn-hint-locked {
+  background: #d4d6e3;
+  color: var(--ink-soft);
+  box-shadow: 0 4px 0 #a4a8bc;
+  cursor: not-allowed;
+}
+.btn.btn-hint-locked::after { display: none; }
+.btn.btn-hint-locked .icon { color: var(--ink-soft); }
+
+/* 카운트다운 중 (회색 + 작은 숫자) */
+.btn.btn-hint-counting {
+  background: #f0f2ff;
+  color: var(--ink-soft);
+  box-shadow: 0 4px 0 #a4a8bc;
+  cursor: not-allowed;
+  font-size: 13px;
+  padding: 10px 14px;
+}
+.btn.btn-hint-counting::after { display: none; }
+.btn.btn-hint-counting .icon {
+  font-size: 18px;
+  color: var(--ink-soft);
+  opacity: 0.6;
+}
+.btn.btn-hint-counting .countdown-num {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-left: 4px;
+}
+
+/* 활성 (사용 가능) */
+.btn.btn-hint-active {
+  background: var(--rb-yellow);
+  color: var(--ink);
+  box-shadow: var(--shadow-hard) #b8881e;
+  animation: hint-glow 1.5s infinite;
+}
+@keyframes hint-glow {
+  0%, 100% { box-shadow: var(--shadow-hard) #b8881e; }
+  50% { box-shadow: var(--shadow-hard) #b8881e, 0 0 16px rgba(255,210,63,0.6); }
+}
+
+/* 힌트 사용 횟수 표시 (-2코인 안내) */
+.hint-cost-tag {
+  background: var(--rb-red);
+  color: white;
+  font-family: 'Press Start 2P', monospace; font-size: 9px;
+  padding: 3px 7px; border-radius: 6px;
+  border: 2px solid var(--ink);
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* ============ 오답노트 모드 표시 ============ */
+.wrong-note-banner {
+  background: linear-gradient(135deg, var(--rb-purple), var(--rb-pink));
+  color: white;
+  padding: 8px 14px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 3px solid var(--ink);
+  font-family: 'Jua', sans-serif;
+  font-size: 14px;
+}
+.wrong-note-banner .icon { font-size: 20px; }
+.wrong-note-banner .label {
+  background: white; color: var(--ink);
+  font-family: 'Press Start 2P', monospace; font-size: 9px;
+  padding: 3px 6px; border-radius: 5px;
+  border: 2px solid var(--ink);
+}
+
+/* ============ 모범 풀이 (정답 공개 시) ============ */
+.model-solution {
+  background: linear-gradient(135deg, #d6f8d6, #a8e6a8);
+  border: 3px solid var(--ink); border-radius: var(--r-block);
+  padding: 14px;
+  text-align: left;
+  box-shadow: 0 4px 0 var(--ink);
+  margin: 10px 0;
+}
+.model-solution .label {
+  background: var(--rb-green); color: white;
+  font-family: 'Press Start 2P', monospace; font-size: 10px;
+  padding: 3px 8px; border-radius: 6px;
+  border: 2px solid var(--ink);
+  display: inline-block; margin-bottom: 8px;
+}
+.model-solution .answer-row {
+  font-size: 16px; font-weight: 800;
+  font-family: 'Jua', sans-serif;
+  margin-bottom: 6px;
+}
+.model-solution .answer-row b {
+  color: var(--rb-green);
+  background: white;
+  padding: 2px 10px;
+  border-radius: 6px;
+  border: 2px solid var(--ink);
+}
+
+/* 오답노트 진행 (간소) */
+.wrong-note-progress {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-align: center;
+}

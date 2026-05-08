@@ -26,6 +26,11 @@ window.initCanvas = function() {
     };
     strokes.push(currentStroke);
     drawStroke(currentStroke);
+
+    // 첫 획 콜백 — 힌트 카운트다운 트리거 등에 사용
+    if (typeof window.onCanvasFirstStroke === 'function') {
+      window.onCanvasFirstStroke();
+    }
   });
 
   canvas.addEventListener('pointermove', e => {

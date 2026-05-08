@@ -231,6 +231,11 @@
       <div class="problem-progress" id="problem-progress"></div>
       <div class="stat-chip coin"><i class="icon">monetization_on</i><span id="coin-mini">0</span></div>
     </div>
+    <div class="wrong-note-banner" id="wrong-note-banner" style="display: none;">
+      <i class="icon">edit_note</i>
+      <span class="label">오답노트</span>
+      <span id="wrong-note-status">다시 도전!</span>
+    </div>
 
     <div class="problem-body">
       <div class="problem-panel">
@@ -259,8 +264,9 @@
         <div class="canvas-wrap">
           <canvas id="drawing-canvas"></canvas>
           <div class="submit-bar">
-            <button class="btn btn-locked" data-action="hint-locked-info" title="오답노트에서 사용해요">
-              <i class="icon">lock</i> 힌트
+            <button class="btn btn-hint-locked" id="hint-btn" data-action="hint-action">
+              <i class="icon">lock</i>
+              <span id="hint-btn-label">힌트</span>
             </button>
             <button class="btn btn-blue" data-action="submit"><i class="icon">check</i> 풀었어요!</button>
           </div>
@@ -308,14 +314,10 @@
         <div class="result-cells" id="result-cells"></div>
       </div>
 
-      <div class="session-result-actions">
-        <button class="btn btn-purple btn-big" data-action="to-reflection">
-          <i class="icon">menu_book</i> 회고하고 마치기
-        </button>
-      </div>
+      <div class="session-result-actions" id="session-result-actions"></div>
 
       <p style="text-align: center; color: var(--ink-soft); font-size: 12px; margin: 0 16px 16px;">
-        오답노트는 다음 라운드에 추가될 예정이에요.
+        오답노트로 다시 도전하면 더 큰 보상을 받아요!
       </p>
     </div>
   </div>

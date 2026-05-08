@@ -133,4 +133,47 @@ window.recordSolved = function(problemId) {
   window.MATHLAND_STATE.solvedHistory[problemId] = Date.now();
 };
 
+// ============ 오답노트 세션 ============
+// 메인 세션 결과를 받아서 오답노트용 새 세션을 만든다
+//   대상: 오답(❌) + 정답이지만 자신없었던(❓ guess)
+window.startWrongNoteSession = function(mainSession) {
+  if (!mainSession || !mainSession.results) return false;
+
+  const targets = [];
+  for (let i = 0; i < mainSession.problems.length; i++) {
+    const r = mainSession.results[i];
+    const c = mainSession.confidence[i];
+    if (r === 'wrong') {
+      targets.push({ problem: mainSession.problems[i], reason: 'wrong', origConfidence: c });
+    } else if (r === 'correct' && c === 'guess') {
+      targets.push({ problem: mainSession.problems[i], reason: 'guess-correct', origConfidence: c });
+    }
+  }
+
+  if (targets.length === 0) return false;
+
+  window.SESSION = {
+    isWrongNote: true,
+    isDiagnostic: false,
+    problems: targets.map(t => t.problem),
+    targets,                    // 원래 결과 정보 보관
+    index: 0,
+    attemptCount: [],           // 각 문제별 시도 횟수
+    hintsUsed: [],              // 각 문제별 힌트 사용 수
+    finalResults: [],           // 'correct' | 'wrong' | 'revealed'
+    hintLevel: 0,
+    // 카운트다운 관련
+    drawStarted: false,         // 한 획 그었는지
+    countdownActive: false,     // 30초 카운트 진행 중
+    countdownEnd: 0,            // 카운트 종료 시각 (ms)
+    confidence: [],
+  };
+  // 시도 횟수 1로 초기화
+  for (let i = 0; i < targets.length; i++) {
+    window.SESSION.attemptCount.push(0);
+    window.SESSION.hintsUsed.push(0);
+  }
+  return true;
+};
+
 console.log('[MATHLAND] session 모듈 로드');

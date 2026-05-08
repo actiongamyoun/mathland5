@@ -105,19 +105,201 @@ function loadCurrentProblem() {
   document.getElementById('hint-area').innerHTML = '';
   s.hintLevel = 0;
 
-  // 진행 점 (정답/오답 안 보이게 — 푼 것만 표시)
+  // ───── 모드별 분기 ─────
+  const banner = document.getElementById('wrong-note-banner');
   const prog = document.getElementById('problem-progress');
-  prog.innerHTML = '';
-  for (let i = 0; i < s.problems.length; i++) {
-    const d = document.createElement('div');
-    d.className = 'dot';
-    if (i < s.index) d.classList.add('done');     // 푼 문제 (색은 회색→초록)
-    if (i === s.index) d.classList.add('current');
-    prog.appendChild(d);
+
+  if (s.isWrongNote) {
+    // 오답노트 모드
+    banner.style.display = 'flex';
+    document.getElementById('wrong-note-status').textContent =
+      `${s.index + 1} / ${s.problems.length}`;
+
+    // 진행 점은 가리고 (집중)
+    prog.innerHTML = '<div class="wrong-note-progress">집중! 한 문제씩</div>';
+
+    // 힌트 버튼 잠금 상태로 초기화 (한 획 그어야 카운트 시작)
+    s.drawStarted = false;
+    s.countdownActive = false;
+    s.countdownEnd = 0;
+    if (s._countdownTimer) { clearInterval(s._countdownTimer); s._countdownTimer = null; }
+    setHintButtonLocked();
+
+    // 첫 획 콜백 등록
+    window.onCanvasFirstStroke = startHintCountdown;
+
+    // 시도 횟수 1회 추가
+    s.attemptCount[s.index] = (s.attemptCount[s.index] || 0) + 1;
+  } else {
+    // 메인 세션
+    banner.style.display = 'none';
+    window.onCanvasFirstStroke = null;
+    if (s._countdownTimer) { clearInterval(s._countdownTimer); s._countdownTimer = null; }
+
+    prog.innerHTML = '';
+    for (let i = 0; i < s.problems.length; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot';
+      if (i < s.index) d.classList.add('done');
+      if (i === s.index) d.classList.add('current');
+      prog.appendChild(d);
+    }
+
+    // 메인 세션은 힌트 버튼 영구 잠금 표시
+    setHintButtonMainLocked();
   }
 
   document.getElementById('coin-mini').textContent = window.MATHLAND_STATE.coins;
   window.clearCanvas();
+}
+
+// ============ 힌트 버튼 상태 관리 ============
+function setHintButtonMainLocked() {
+  // 메인 세션에서는 영구적으로 잠겨있음 (오답노트에서만 사용)
+  const btn = document.getElementById('hint-btn');
+  if (!btn) return;
+  btn.className = 'btn btn-locked';
+  btn.innerHTML = '<i class="icon">lock</i> 힌트';
+}
+
+function setHintButtonLocked() {
+  // 오답노트, 한 획 그리기 전
+  const btn = document.getElementById('hint-btn');
+  if (!btn) return;
+  btn.className = 'btn btn-hint-locked';
+  btn.innerHTML = '<i class="icon">edit</i> 한 획 그어봐';
+}
+
+function setHintButtonCountdown(seconds) {
+  const btn = document.getElementById('hint-btn');
+  if (!btn) return;
+  btn.className = 'btn btn-hint-counting';
+  btn.innerHTML = `<i class="icon">timer</i><span class="countdown-num">${seconds}</span>`;
+}
+
+function setHintButtonActive() {
+  const btn = document.getElementById('hint-btn');
+  if (!btn) return;
+  const s = window.SESSION;
+  const used = s?.hintsUsed?.[s.index] || 0;
+  btn.className = 'btn btn-hint-active';
+  btn.innerHTML = `<i class="icon">lightbulb</i> 힌트 ${used + 1}/3 <span class="hint-cost-tag">-2</span>`;
+}
+
+function setHintButtonExhausted() {
+  const btn = document.getElementById('hint-btn');
+  if (!btn) return;
+  btn.className = 'btn btn-hint-locked';
+  btn.innerHTML = '<i class="icon">visibility</i> 힌트 다 봤어';
+}
+
+// 첫 획이 그려지면 호출됨 — 카운트다운 시작
+function startHintCountdown() {
+  const s = window.SESSION;
+  if (!s || !s.isWrongNote) return;
+  if (s.drawStarted) return;  // 이미 시작됨
+  s.drawStarted = true;
+
+  // 힌트 다 썼으면 시작 안 함
+  const used = s.hintsUsed[s.index] || 0;
+  if (used >= 3) {
+    setHintButtonExhausted();
+    return;
+  }
+
+  s.countdownEnd = Date.now() + 30000;
+  s.countdownActive = true;
+  setHintButtonCountdown(30);
+
+  if (s._countdownTimer) clearInterval(s._countdownTimer);
+  s._countdownTimer = setInterval(() => {
+    const remain = Math.max(0, Math.ceil((s.countdownEnd - Date.now()) / 1000));
+    if (remain <= 0) {
+      clearInterval(s._countdownTimer);
+      s._countdownTimer = null;
+      s.countdownActive = false;
+      setHintButtonActive();
+    } else {
+      setHintButtonCountdown(remain);
+    }
+  }, 250);
+}
+
+// 힌트 버튼 클릭 처리 (오답노트 모드에서만 의미 있음)
+function handleHintClick() {
+  const s = window.SESSION;
+  if (!s) return;
+
+  if (!s.isWrongNote) {
+    // 메인 세션 — 잠김 안내
+    window.showHintLockedInfo();
+    return;
+  }
+
+  // 오답노트인데 아직 한 획도 안 그음
+  if (!s.drawStarted) return;
+  // 카운트다운 중
+  if (s.countdownActive) return;
+
+  // 힌트 보여주기
+  const used = s.hintsUsed[s.index] || 0;
+  if (used >= 3) return;
+
+  const p = s.problems[s.index];
+  const labels = ['개념', '원리', '조금 더'];
+  const ha = document.getElementById('hint-area');
+  const div = document.createElement('div');
+  div.className = 'hint-bubble';
+  div.innerHTML = `
+    <strong>HINT ${used + 1} · ${labels[used]}</strong>
+    <div>${escapeHtml(p.hints[used] || '힌트 준비 중')}</div>
+  `;
+  ha.appendChild(div);
+
+  s.hintsUsed[s.index] = used + 1;
+  // 코인 차감
+  window.MATHLAND_STATE.coins = Math.max(0, window.MATHLAND_STATE.coins - 2);
+  document.getElementById('coin-mini').textContent = window.MATHLAND_STATE.coins;
+  window.saveState();
+
+  // 떠오르는 -2 표시
+  spawnFloatingCoinPenalty();
+
+  // 다음 힌트를 위해 카운트다운 다시
+  if (s.hintsUsed[s.index] < 3) {
+    s.countdownEnd = Date.now() + 30000;
+    s.countdownActive = true;
+    setHintButtonCountdown(30);
+    if (s._countdownTimer) clearInterval(s._countdownTimer);
+    s._countdownTimer = setInterval(() => {
+      const remain = Math.max(0, Math.ceil((s.countdownEnd - Date.now()) / 1000));
+      if (remain <= 0) {
+        clearInterval(s._countdownTimer);
+        s._countdownTimer = null;
+        s.countdownActive = false;
+        setHintButtonActive();
+      } else {
+        setHintButtonCountdown(remain);
+      }
+    }, 250);
+  } else {
+    setHintButtonExhausted();
+  }
+}
+
+// -2 떠오르는 표시
+function spawnFloatingCoinPenalty() {
+  const el = document.createElement('div');
+  el.className = 'floating-coin';
+  el.textContent = '-2';
+  el.style.left = '50%';
+  el.style.top = '40%';
+  el.style.color = 'var(--rb-red)';
+  el.style.fontFamily = "'Jua', sans-serif";
+  el.style.fontSize = '24px';
+  el.style.setProperty('--dx', '0px');
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
 }
 
 function showNextHint() {
@@ -146,9 +328,164 @@ function submitAnswer() {
     if (!confirm('아직 풀이를 적지 않았어요. 정말 다음으로 넘어갈까요?')) return;
   }
 
-  // 채점은 나중에 (세션 끝). 지금은 자신감 체크만.
+  if (s.isWrongNote) {
+    // 오답노트 모드: 즉시 채점
+    handleWrongNoteSubmit(p);
+    return;
+  }
+
+  // 메인 세션: 채점은 나중에. 자신감 체크만.
   showConfidenceModal(p);
 }
+
+// ============ 오답노트 제출 처리 ============
+function handleWrongNoteSubmit(p) {
+  const s = window.SESSION;
+  // 카운트다운 정리
+  if (s._countdownTimer) { clearInterval(s._countdownTimer); s._countdownTimer = null; }
+  s.countdownActive = false;
+
+  const score = window.scoreAnswer(p, window.hasDrawing());
+
+  if (score.result === 'correct') {
+    showWrongNoteCorrect(p);
+    return;
+  }
+
+  // 오답이거나 review
+  const attempts = s.attemptCount[s.index] || 1;
+
+  if (attempts >= 2) {
+    // 두 번 째 시도도 실패 → 정답 공개
+    showWrongNoteReveal(p, 'tried-twice');
+  } else {
+    // 첫 시도 실패 → 한 번 더 도전 기회
+    showWrongNoteRetry(p);
+  }
+}
+
+function showWrongNoteCorrect(p) {
+  const s = window.SESSION;
+  const used = s.hintsUsed[s.index] || 0;
+  // 보상 계산
+  let coins = 8 - 2 * used;
+  coins = Math.max(0, coins);
+
+  window.MATHLAND_STATE.coins += coins;
+  document.getElementById('coin-mini').textContent = window.MATHLAND_STATE.coins;
+  window.saveState();
+
+  s.finalResults[s.index] = 'correct';
+
+  // 단원 마스터리 업데이트 (오답노트 정답은 +5)
+  const unitId = p.id.split('-')[0];
+  if (window.MATHLAND_STATE.unitMastery[unitId] === undefined) window.MATHLAND_STATE.unitMastery[unitId] = 50;
+  window.MATHLAND_STATE.unitMastery[unitId] = Math.min(100, window.MATHLAND_STATE.unitMastery[unitId] + 5);
+  window.saveState();
+
+  spawnConfetti();
+  if (coins > 0) spawnFloatingCoins(Math.min(coins, 4));
+
+  const modal = document.getElementById('result-modal');
+  const content = document.getElementById('result-modal-content');
+  content.innerHTML = `
+    <div class="result-icon correct"><i class="icon">check_circle</i></div>
+    <h2>다시 풀어냈어!</h2>
+    <p>${used === 0 ? '힌트 없이 혼자 해냈어요! 멋져요 ✨' : '힌트를 보고 다시 도전해서 풀었어요.'}</p>
+    ${coins > 0 ? `
+    <div class="reward-row">
+      <div class="reward-pill coin"><i class="icon">monetization_on</i> +${coins}</div>
+    </div>` : ''}
+    <div class="model-solution">
+      <span class="label">정답 확인</span>
+      <div class="answer-row">${escapeHtml(p.eq)} → <b>${escapeHtml(p.answer)}</b></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-blue btn-big" data-action="next-problem">
+        <i class="icon">arrow_forward</i> 다음 문제
+      </button>
+    </div>
+  `;
+  modal.classList.add('active');
+}
+
+function showWrongNoteRetry(p) {
+  const modal = document.getElementById('result-modal');
+  const content = document.getElementById('result-modal-content');
+  content.innerHTML = `
+    <div class="result-icon wrong"><i class="icon">refresh</i></div>
+    <h2>다시 한번!</h2>
+    <p>아쉬워, 한 번 더 도전해보자.<br>힌트도 활용해봐 (코인 -2)</p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-action="reveal-wrong-note"><i class="icon">visibility</i> 정답 보기</button>
+      <button class="btn btn-yellow btn-big" data-action="retry-wrong-note"><i class="icon">redo</i> 다시 도전!</button>
+    </div>
+  `;
+  modal.classList.add('active');
+}
+
+function showWrongNoteReveal(p, reason) {
+  const s = window.SESSION;
+  s.finalResults[s.index] = 'revealed';
+
+  // 마스터리 살짝 -
+  const unitId = p.id.split('-')[0];
+  if (window.MATHLAND_STATE.unitMastery[unitId] === undefined) window.MATHLAND_STATE.unitMastery[unitId] = 50;
+  window.MATHLAND_STATE.unitMastery[unitId] = Math.max(0, window.MATHLAND_STATE.unitMastery[unitId] - 2);
+  window.saveState();
+
+  const modal = document.getElementById('result-modal');
+  const content = document.getElementById('result-modal-content');
+  const heading = reason === 'tried-twice' ? '괜찮아, 같이 보자!' : '풀이를 함께 봐!';
+
+  content.innerHTML = `
+    <div class="result-icon review"><i class="icon">school</i></div>
+    <h2>${heading}</h2>
+    <p>이 문제는 다음에 더 잘 풀 수 있을 거야.<br>모범 풀이를 잘 보고 이해하자.</p>
+    <div class="model-solution">
+      <span class="label">정답</span>
+      <div class="answer-row">${escapeHtml(p.eq)} → <b>${escapeHtml(p.answer)}</b></div>
+      ${p.hints && p.hints[2] ? `
+      <div style="margin-top: 8px; font-size: 13px; line-height: 1.5; color: var(--ink); font-family: 'Pretendard', sans-serif;">
+        💡 ${escapeHtml(p.hints[2])}
+      </div>` : ''}
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-blue btn-big" data-action="next-problem">
+        <i class="icon">arrow_forward</i> 다음 문제
+      </button>
+    </div>
+  `;
+  modal.classList.add('active');
+}
+
+// 한번 더 도전 — 캔버스 비우고 다시 같은 문제
+window.retryWrongNote = function() {
+  closeResultModal();
+  const s = window.SESSION;
+  if (!s) return;
+  s.attemptCount[s.index] = (s.attemptCount[s.index] || 0) + 1;
+  // 카운트다운 상태 리셋 (드로잉부터 다시)
+  s.drawStarted = false;
+  s.countdownActive = false;
+  s.countdownEnd = 0;
+  if (s._countdownTimer) { clearInterval(s._countdownTimer); s._countdownTimer = null; }
+
+  // 힌트 다 썼는지 보고 버튼 상태 결정
+  const used = s.hintsUsed[s.index] || 0;
+  if (used >= 3) setHintButtonExhausted();
+  else setHintButtonLocked();
+
+  window.clearCanvas();
+};
+
+window.revealWrongNote = function() {
+  closeResultModal();
+  const s = window.SESSION;
+  if (!s) return;
+  const p = s.problems[s.index];
+  showWrongNoteReveal(p, 'gave-up');
+};
 
 // ============ 자신감 체크 모달 ============
 function showConfidenceModal(problem) {
@@ -361,9 +698,84 @@ function nextProblem() {
     s.inChallenge = false;
   }
   s.index++;
-  if (s.index >= s.problems.length) endSession();
-  else loadCurrentProblem();
+
+  if (s.isWrongNote) {
+    if (s.index >= s.problems.length) endWrongNoteSession();
+    else loadCurrentProblem();
+  } else {
+    if (s.index >= s.problems.length) endSession();
+    else loadCurrentProblem();
+  }
 }
+
+// ============ 오답노트 세션 종료 ============
+function endWrongNoteSession() {
+  const s = window.SESSION;
+  if (!s) return;
+
+  // 카운트다운 정리
+  if (s._countdownTimer) { clearInterval(s._countdownTimer); s._countdownTimer = null; }
+  window.onCanvasFirstStroke = null;
+
+  // 정복 통계
+  const total = s.problems.length;
+  const correct = s.finalResults.filter(r => r === 'correct').length;
+  const fullClear = correct === total;
+
+  // 추가 보너스
+  let bonusCoins = 0;
+  let bonusGems = 0;
+  if (fullClear) {
+    bonusCoins = 10;
+    bonusGems = 1;
+    window.MATHLAND_STATE.coins += bonusCoins;
+    window.MATHLAND_STATE.gems += bonusGems;
+  }
+  window.saveState();
+
+  // 결과 → 회고
+  const modal = document.getElementById('result-modal');
+  const content = document.getElementById('result-modal-content');
+
+  const titleText = fullClear
+    ? '오답노트 100% 정복!'
+    : `${correct} / ${total} 정복!`;
+
+  content.innerHTML = `
+    <div class="result-icon ${fullClear ? 'correct' : 'review'}">
+      <i class="icon">${fullClear ? 'emoji_events' : 'edit_note'}</i>
+    </div>
+    <h2>${titleText}</h2>
+    <p>${fullClear
+      ? '틀렸던 문제를 모두 다시 풀어냈어요! 정말 멋져요 ✨'
+      : '도전한 자체가 멋진 거야. 모범 풀이 잘 봐뒀지?'}</p>
+    ${fullClear ? `
+    <div class="reward-row">
+      <div class="reward-pill coin"><i class="icon">monetization_on</i> +${bonusCoins}</div>
+      <div class="reward-pill gem"><i class="icon">diamond</i> +${bonusGems}</div>
+    </div>` : ''}
+    <div class="modal-btns">
+      <button class="btn btn-purple btn-big" data-action="to-reflection-from-wrongnote">
+        <i class="icon">menu_book</i> 회고하고 마치기
+      </button>
+    </div>
+  `;
+  modal.classList.add('active');
+  if (fullClear) spawnConfetti();
+}
+
+window.toReflectionFromWrongNote = function() {
+  // 회고 진입은 동일 흐름이지만 진단평가 X 분기 명시
+  const s = window.SESSION;
+  if (!s) return;
+  closeResultModal();
+  const todayDone = window.MATHLAND_STATE.reflections.find(r => r.date === window.todayKey());
+  if (todayDone) {
+    showFinalSummary(0, 0, false);
+    return;
+  }
+  showReflectionScreen(0, s.problems.length);
+};
 
 function revealAnswer() {
   closeResultModal();
@@ -566,6 +978,29 @@ function showSessionResult() {
     cells.appendChild(cell);
   }
 
+  // 액션 버튼 동적 생성 — 오답/자신없음 있으면 오답노트 버튼
+  const actions = document.getElementById('session-result-actions');
+  const wrongCount2 = s.results.filter(r => r === 'wrong').length;
+  const guessCorrectCount = s.results.filter((r, i) => r === 'correct' && s.confidence[i] === 'guess').length;
+  const wrongNoteCount = wrongCount2 + guessCorrectCount;
+
+  if (wrongNoteCount > 0) {
+    actions.innerHTML = `
+      <button class="btn btn-pink btn-big" data-action="start-wrong-note">
+        <i class="icon">edit_note</i> 오답노트 시작! (${wrongNoteCount}문제)
+      </button>
+      <button class="btn btn-ghost" data-action="to-reflection">
+        건너뛰기
+      </button>
+    `;
+  } else {
+    actions.innerHTML = `
+      <button class="btn btn-purple btn-big" data-action="to-reflection">
+        <i class="icon">menu_book</i> 회고하고 마치기
+      </button>
+    `;
+  }
+
   window.show('session-result-screen');
 
   // 약한 콘페티 (성취감)
@@ -594,6 +1029,80 @@ window.toReflection = function() {
     s.results.filter(r => r === 'correct').length,
     s.problems.length
   );
+};
+
+// ============ 오답노트 시작 흐름 ============
+window.startWrongNoteFlow = function() {
+  const mainSession = window.SESSION;
+  if (!mainSession) return;
+
+  // 분석: 자신있다 했는데 틀린 게 있는지?
+  let confidentButWrong = 0;
+  let guessButCorrect = 0;
+  let pureWrong = 0;
+  for (let i = 0; i < mainSession.problems.length; i++) {
+    const r = mainSession.results[i];
+    const c = mainSession.confidence[i];
+    if (r === 'wrong' && c === 'sure') confidentButWrong++;
+    else if (r === 'correct' && c === 'guess') guessButCorrect++;
+    else if (r === 'wrong') pureWrong++;
+  }
+
+  // 메시지 동적 생성
+  let title = '같이 들여다보자!';
+  let subMessage = '';
+  if (confidentButWrong > 0) {
+    title = '자신 있다고 했는데...';
+    subMessage = `<b style="color: var(--rb-red);">${confidentButWrong}문제</b>가 자신있다 했는데 틀렸구나! 어떤 부분이 헷갈렸을까?`;
+  } else if (guessButCorrect > 0 && pureWrong === 0) {
+    title = '찍어서 맞은 문제도 있구나!';
+    subMessage = `정답이지만 잘 모른다고 표시한 <b style="color: var(--rb-orange);">${guessButCorrect}문제</b>를 같이 풀어보자.`;
+  } else {
+    subMessage = '틀린 문제를 같이 풀어보면 다음엔 더 잘 풀 수 있어!';
+  }
+
+  const targets = [];
+  for (let i = 0; i < mainSession.problems.length; i++) {
+    const r = mainSession.results[i];
+    const c = mainSession.confidence[i];
+    if (r === 'wrong' || (r === 'correct' && c === 'guess')) {
+      targets.push({ idx: i, r, c });
+    }
+  }
+
+  const modal = document.getElementById('result-modal');
+  const content = document.getElementById('result-modal-content');
+  content.innerHTML = `
+    <div class="result-icon" style="background: linear-gradient(135deg, var(--rb-pink), var(--rb-purple));">
+      <i class="icon">edit_note</i>
+    </div>
+    <h2>${title}</h2>
+    <p>${subMessage}</p>
+    <div style="background: var(--paper-soft); border: 3px solid var(--ink); border-radius: 12px; padding: 12px; margin: 14px 0; box-shadow: 0 3px 0 var(--ink); text-align: left;">
+      <p style="margin: 0 0 8px; font-size: 13px; font-family: 'Press Start 2P', monospace; color: var(--ink-soft);">RULES</p>
+      <ul style="margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.7; font-family: 'Pretendard', sans-serif;">
+        <li>한 획 그어야 힌트 30초 카운트 시작</li>
+        <li>힌트 1개당 코인 -2</li>
+        <li>한 번 더 도전 가능 (그래도 틀리면 정답 공개)</li>
+        <li>다 정복하면 보석 +1!</li>
+      </ul>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-action="to-reflection">건너뛰기</button>
+      <button class="btn btn-pink btn-big" id="confirm-start-wrongnote">
+        <i class="icon">play_arrow</i> 시작!
+      </button>
+    </div>
+  `;
+  modal.classList.add('active');
+
+  document.getElementById('confirm-start-wrongnote').addEventListener('click', () => {
+    if (window.startWrongNoteSession(mainSession)) {
+      closeResultModal();
+      window.show('problem-screen');
+      setTimeout(loadCurrentProblem, 50);
+    }
+  });
 };
 
 function showReflectionScreen(correctCount, total) {
@@ -842,6 +1351,21 @@ function handleAction(action, target) {
       break;
     case 'to-reflection':
       window.toReflection();
+      break;
+    case 'start-wrong-note':
+      window.startWrongNoteFlow();
+      break;
+    case 'retry-wrong-note':
+      window.retryWrongNote();
+      break;
+    case 'reveal-wrong-note':
+      window.revealWrongNote();
+      break;
+    case 'to-reflection-from-wrongnote':
+      window.toReflectionFromWrongNote();
+      break;
+    case 'hint-action':
+      handleHintClick();
       break;
     case 'next-problem':
       nextProblem();
