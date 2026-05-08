@@ -872,9 +872,80 @@ function handleAction(action, target) {
   }
 }
 
+// ============ Service Worker 등록 ============
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+
+  // localhost나 file://에선 SW 등록 안 함 (개발 편의)
+  if (location.protocol === 'file:') return;
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => {
+        console.log('[App] SW 등록됨');
+
+        // 새 버전 감지
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+
+          newWorker.addEventListener('statechange', () => {
+            // 새 SW가 설치되었고, 기존 SW가 이미 있으면 = 업데이트 가능
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              showUpdateAvailable(newWorker);
+            }
+          });
+        });
+
+        // 1시간마다 업데이트 체크
+        setInterval(() => reg.update(), 60 * 60 * 1000);
+      })
+      .catch(err => console.warn('[App] SW 등록 실패:', err.message));
+
+    // SW가 새 버전으로 교체되면 페이지 자동 새로고침
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+  });
+}
+
+// 업데이트 알림 모달
+function showUpdateAvailable(newWorker) {
+  // 학습 중에는 방해 X — SESSION 진행 중이면 다음 진입 때까지 미룸
+  if (window.SESSION) {
+    setTimeout(() => showUpdateAvailable(newWorker), 30 * 1000);
+    return;
+  }
+
+  const modal = document.getElementById('result-modal');
+  const content = document.getElementById('result-modal-content');
+  content.innerHTML = `
+    <div class="result-icon" style="background: linear-gradient(135deg, var(--rb-cyan), var(--rb-blue));">
+      <i class="icon">system_update</i>
+    </div>
+    <h2>새 버전이 있어요!</h2>
+    <p>새로운 기능이나 개선사항이 추가되었어요.<br>지금 업데이트할까요?</p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-action="close-modal">나중에</button>
+      <button class="btn btn-blue btn-big" id="apply-update"><i class="icon">refresh</i> 업데이트!</button>
+    </div>
+  `;
+  modal.classList.add('active');
+
+  document.getElementById('apply-update')?.addEventListener('click', () => {
+    closeResultModal();
+    newWorker.postMessage({ type: 'SKIP_WAITING' });
+    // controllerchange 이벤트가 페이지 자동 새로고침 처리
+  });
+}
+
 // ============ 초기화 ============
 function boot() {
   window.initCanvas();
+  registerServiceWorker();
 
   // 모바일 더블탭 줌 방지 (버튼/카드 위에서는 제외)
   let lastTouch = 0;
