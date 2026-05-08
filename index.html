@@ -243,11 +243,64 @@
         <div class="canvas-wrap">
           <canvas id="drawing-canvas"></canvas>
           <div class="submit-bar">
-            <button class="btn btn-ghost" data-action="hint-request"><i class="icon">help</i> 힌트</button>
-            <button class="btn btn-blue" data-action="submit"><i class="icon">check</i> 제출</button>
+            <button class="btn btn-locked" data-action="hint-locked-info" title="오답노트에서 사용해요">
+              <i class="icon">lock</i> 힌트
+            </button>
+            <button class="btn btn-blue" data-action="submit"><i class="icon">check</i> 풀었어요!</button>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 3.5. 세션 결과 화면 (10문제 다 푼 후) -->
+  <div class="screen" id="session-result-screen">
+    <div class="top-bar">
+      <button class="back" data-action="back-home"><i class="icon">close</i></button>
+      <div class="title">오늘 푼 문제</div>
+    </div>
+
+    <div style="overflow-y: auto; flex: 1;">
+      <div class="result-summary-bar">
+        <div class="result-stat">
+          <div class="num green" id="result-correct">0</div>
+          <div class="lbl">정답</div>
+        </div>
+        <div class="result-stat">
+          <div class="num red" id="result-wrong">0</div>
+          <div class="lbl">오답</div>
+        </div>
+        <div class="result-stat">
+          <div class="num purple" id="result-total">0</div>
+          <div class="lbl">총 문제</div>
+        </div>
+      </div>
+
+      <div class="meta-accuracy">
+        <span class="label">META 자신감 정확도</span>
+        <div class="meta-text" id="meta-accuracy-text">자신감 데이터 분석 중...</div>
+      </div>
+
+      <div class="result-grid">
+        <h3>
+          <i class="icon" style="color: var(--rb-blue);">grid_view</i>
+          한눈에 보기
+        </h3>
+        <p style="font-size: 13px; color: var(--ink-soft); margin: 0 0 12px;">
+          ✅ 정답 / ❌ 오답 / ❓ 자신없었음 (정답이라도)
+        </p>
+        <div class="result-cells" id="result-cells"></div>
+      </div>
+
+      <div class="session-result-actions">
+        <button class="btn btn-purple btn-big" data-action="to-reflection">
+          <i class="icon">menu_book</i> 회고하고 마치기
+        </button>
+      </div>
+
+      <p style="text-align: center; color: var(--ink-soft); font-size: 12px; margin: 0 16px 16px;">
+        오답노트는 다음 라운드에 추가될 예정이에요.
+      </p>
     </div>
   </div>
 
