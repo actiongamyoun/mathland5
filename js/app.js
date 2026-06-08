@@ -121,55 +121,10 @@ function refreshUnitSelect() {
   // 현재 과목/학년 단원만
   const units = window.getUnitsBySubjectGrade(subjId, grade);
 
-  // ── 학습 현황 요약 ──
-  const overview = document.getElementById('study-overview');
-  if (overview) {
-    // 전체 평균 마스터리
-    let totalMastery = 0;
-    units.forEach(u => { totalMastery += (state.unitMastery[u.id] || 0); });
-    const avgMastery = units.length > 0 ? Math.round(totalMastery / units.length) : 0;
+  // ── ① 오늘 할 일 (HERO) ──
+  renderDashHero();
 
-    // 마스터한 단원 수 (70%+)
-    const masteredCount = units.filter(u => (state.unitMastery[u.id] || 0) >= 70).length;
-
-    let masteryRows = '';
-    units.forEach(u => {
-      const m = state.unitMastery[u.id] || 0;
-      let barColor;
-      if (m < 30) barColor = 'var(--rb-red)';
-      else if (m < 70) barColor = 'var(--rb-yellow)';
-      else barColor = 'var(--rb-green)';
-      masteryRows += `
-        <div class="mastery-row">
-          <div class="m-icon" style="background: ${u.color};"><i class="icon">${u.icon}</i></div>
-          <div class="m-name">${u.name}</div>
-          <div class="m-bar-wrap"><div class="m-bar" style="width: ${m}%; background: ${barColor};"></div></div>
-          <div class="m-pct">${m}%</div>
-        </div>
-      `;
-    });
-
-    overview.innerHTML = `
-      <h3><i class="icon" style="color: var(--rb-blue);">insights</i> 내 학습 현황</h3>
-      <div class="overview-stats">
-        <div class="ov-stat">
-          <div class="num" style="color: var(--rb-blue);">${avgMastery}%</div>
-          <div class="lbl">평균</div>
-        </div>
-        <div class="ov-stat">
-          <div class="num" style="color: var(--rb-green);">${masteredCount}</div>
-          <div class="lbl">마스터</div>
-        </div>
-        <div class="ov-stat">
-          <div class="num" style="color: var(--rb-purple);">${units.length}</div>
-          <div class="lbl">단원</div>
-        </div>
-      </div>
-      <div class="mastery-list">${masteryRows}</div>
-    `;
-  }
-
-  // ── 단원 카드 ──
+  // ── ② 단원 카드 (이해도 % 통합) ──
   const grid = document.getElementById('unit-grid');
   grid.innerHTML = '';
   units.forEach((u) => {
@@ -190,6 +145,7 @@ function refreshUnitSelect() {
       <div class="unit-num">${u.semester}-${u.unitNum} · ${probCount}문제${isReady ? '' : ' (준비중)'}</div>
       <div class="unit-name">${u.name}</div>
       <div class="unit-progress"><div class="unit-progress-bar" style="width: ${mastery}%"></div></div>
+      <div class="unit-pct-row"><span>이해도</span><b>${mastery}%</b></div>
     `;
     card.addEventListener('click', () => {
       if (window.startUnitSession(u.id)) {
@@ -200,55 +156,89 @@ function refreshUnitSelect() {
     grid.appendChild(card);
   });
 
-  const weakest = window.findWeakestUnit();
-  document.getElementById('ai-recommend-text').textContent =
-    state.diagnosticDone
-      ? `오늘은 "${weakest.name}"부터 풀어볼까?`
-      : '먼저 진단평가를 해주세요!';
+  // ── ③ 내 학습 현황 (접이식, 간결한 숫자 요약) ──
+  const overview = document.getElementById('study-overview');
+  if (overview) {
+    let totalMastery = 0;
+    units.forEach(u => { totalMastery += (state.unitMastery[u.id] || 0); });
+    const avgMastery = units.length > 0 ? Math.round(totalMastery / units.length) : 0;
+    const masteredCount = units.filter(u => (state.unitMastery[u.id] || 0) >= 70).length;
+    const solvedTotal = state.totalSolved || 0;
 
-  renderWeeklyPlan();
+    overview.innerHTML = `
+      <div class="overview-stats">
+        <div class="ov-stat">
+          <div class="num" style="color: var(--brand);">${avgMastery}%</div>
+          <div class="lbl">평균 이해도</div>
+        </div>
+        <div class="ov-stat">
+          <div class="num" style="color: var(--accent-green);">${masteredCount}<span style="font-size:14px;">/${units.length}</span></div>
+          <div class="lbl">마스터한 단원</div>
+        </div>
+        <div class="ov-stat">
+          <div class="num" style="color: var(--accent-purple);">${solvedTotal}</div>
+          <div class="lbl">푼 문제</div>
+        </div>
+      </div>
+    `;
+  }
 }
 
-// ============ 주간 학습 계획 렌더링 ============
-function renderWeeklyPlan() {
-  const area = document.getElementById('weekly-plan-area');
-  if (!area) return;
+// ── 오늘 할 일 HERO 렌더링 ──
+function renderDashHero() {
+  const hero = document.getElementById('dash-hero');
+  if (!hero) return;
+  const state = window.MATHLAND_STATE;
   const plan = window.getActivePlan();
+  const units = window.getUnitsBySubjectGrade(state.currentSubject, state.currentGrade);
 
-  if (!plan) {
-    // 계획 없음 → 세우기 카드
-    area.innerHTML = `
-      <div class="plan-empty">
-        <div class="pe-icon"><i class="icon">event_note</i></div>
-        <h3>이번 주 학습 계획</h3>
-        <p>이번 주에 어떤 단원을 공부할지 정해볼까?<br>마리가 도와줄게!</p>
-        <button class="btn btn-orange" data-action="make-plan"><i class="icon">add</i> 계획 세우기</button>
+  if (plan) {
+    // 계획 있음 → 진행 카드 + 이어하기
+    const chips = (plan.goalUnits || []).map(uid => {
+      const u = units.find(x => x.id === uid);
+      if (!u) return '';
+      return `<span class="hero-unit-chip"><span style="color:${u.color}"><i class="icon">${u.icon}</i></span>${u.name}</span>`;
+    }).join('');
+    const done = plan.doneSessions || 0;
+    const target = plan.targetSessions || 1;
+    const pct = Math.min(100, Math.round(done / target * 100));
+    const allDone = done >= target;
+
+    // 이어서 공부할 단원 (계획 단원 중 첫 번째 ready)
+    const nextUnit = (plan.goalUnits || []).map(uid => units.find(x => x.id === uid)).find(Boolean);
+
+    hero.innerHTML = `
+      <div class="hero-card ${allDone ? 'done' : ''}">
+        <div class="hero-card-top">
+          <div class="hero-badge"><i class="icon">event_available</i> 이번 주 계획</div>
+          <div class="hero-prog">${done}/${target}</div>
+        </div>
+        <div class="hero-units">${chips}</div>
+        <div class="hero-bar-wrap"><div class="hero-bar" style="width:${pct}%"></div></div>
+        <div class="hero-status">${allDone ? '🎉 이번 주 목표 달성! 더 해도 좋아' : `목표까지 ${target - done}번 더 풀면 돼!`}</div>
+        <button class="btn btn-blue hero-btn" data-action="continue-plan" data-unit="${nextUnit ? nextUnit.id : ''}">
+          <i class="icon">play_arrow</i> ${allDone ? '계획 다시 세우기' : '이어서 공부하기'}
+        </button>
       </div>`;
-    return;
+  } else {
+    // 계획 없음 → 세우기 유도 (마리 + 추천)
+    const weakest = window.findWeakestUnit();
+    const recommendText = state.diagnosticDone
+      ? `약한 단원은 "${weakest.name}"이야`
+      : '먼저 진단평가로 시작해볼까?';
+    hero.innerHTML = `
+      <div class="hero-card empty">
+        <div class="hero-mascot-sm">${window.mascotSVG ? window.mascotSVG('wink', 72) : ''}</div>
+        <div class="hero-empty-text">
+          <div class="hero-empty-title">이번 주 계획을 세워볼까?</div>
+          <div class="hero-empty-sub">${recommendText}</div>
+        </div>
+        <button class="btn btn-orange hero-btn" data-action="make-plan">
+          <i class="icon">add</i> 계획 세우기
+        </button>
+        ${state.diagnosticDone ? '' : `<button class="btn btn-ghost hero-btn" data-action="ai-recommend"><i class="icon">stars</i> 진단평가</button>`}
+      </div>`;
   }
-
-  // 계획 있음 → 진행 카드
-  const units = window.getUnitsBySubjectGrade(window.MATHLAND_STATE.currentSubject, window.MATHLAND_STATE.currentGrade);
-  const chips = (plan.goalUnits || []).map(uid => {
-    const u = units.find(x => x.id === uid);
-    if (!u) return '';
-    return `<span class="plan-unit-chip"><span style="color:${u.color}"><i class="icon">${u.icon}</i></span>${u.name}</span>`;
-  }).join('');
-  const done = plan.doneSessions || 0;
-  const target = plan.targetSessions || 1;
-  const pct = Math.min(100, Math.round(done / target * 100));
-
-  area.innerHTML = `
-    <div class="plan-card">
-      <div class="plan-head">
-        <i class="icon">event_available</i>
-        <h3>이번 주 계획</h3>
-        <span class="plan-progress-text">${done}/${target}</span>
-      </div>
-      <div class="plan-units">${chips}</div>
-      <div class="plan-bar-wrap"><div class="plan-bar" style="width:${pct}%"></div></div>
-      <div class="plan-sessions">${done >= target ? '이번 주 목표 달성! 🎉' : `목표까지 ${target - done}번 더!`}</div>
-    </div>`;
 }
 
 // 계획 세우기 모달 (단원 선택)
@@ -1676,6 +1666,26 @@ function handleAction(action, target) {
     case 'confirm-plan':
       window.confirmPlan();
       break;
+    case 'continue-plan': {
+      // 계획의 다음 단원으로 바로 학습 시작
+      const uid = el.dataset.unit;
+      const plan = window.getActivePlan();
+      if (plan && (plan.doneSessions || 0) >= (plan.targetSessions || 1)) {
+        // 목표 달성 → 계획 다시 세우기
+        window.openPlanPicker();
+      } else if (uid && window.startUnitSession(uid)) {
+        window.show('problem-screen');
+        setTimeout(loadCurrentProblem, 50);
+      }
+      break;
+    }
+    case 'toggle-overview': {
+      const col = document.getElementById('overview-collapse');
+      const chev = document.getElementById('overview-chevron');
+      if (col) col.classList.toggle('open');
+      if (chev) chev.textContent = col && col.classList.contains('open') ? 'expand_less' : 'expand_more';
+      break;
+    }
     case 'back-home':
       window.resetPin();
       if (window.SESSION) window.SESSION = null;

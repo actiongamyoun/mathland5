@@ -749,3 +749,75 @@ body {
 .plan-pick-item.selected .pick-check { background: var(--brand); border-color: var(--brand); }
 .plan-pick-item.selected .pick-check .icon { color: #fff; font-size: 16px; }
 .plan-pick-item:not(.selected) .pick-check .icon { display: none; }
+
+/* ============ 19. 대시보드 재디자인 ============ */
+.dash-scroll { padding-top: 4px; }
+
+/* 섹션 헤더 */
+.dash-section-head {
+  display: flex; align-items: center; gap: 7px; padding: 0 16px; margin: 6px 0 12px;
+}
+.dash-section-head .icon { color: var(--brand); font-size: 22px; }
+.dash-section-head h3 { font-size: 17px; font-weight: 800; }
+
+/* ① HERO (오늘 할 일) */
+.dash-hero { padding: 14px 16px 8px; }
+.hero-card {
+  background: linear-gradient(135deg, var(--brand), #4a9fff);
+  border-radius: 22px; padding: 20px; color: #fff;
+  box-shadow: 0 8px 24px rgba(28,176,246,0.25);
+}
+.hero-card.done { background: linear-gradient(135deg, var(--accent-green), #7ed957); box-shadow: 0 8px 24px rgba(88,204,2,0.25); }
+.hero-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.hero-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 800; background: rgba(255,255,255,0.22); padding: 7px 14px; border-radius: 999px; }
+.hero-badge .icon { font-size: 18px; }
+.hero-prog { font-size: 20px; font-weight: 900; }
+.hero-units { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+.hero-unit-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,0.95); color: var(--text); border-radius: 999px;
+  padding: 6px 13px; font-size: 13px; font-weight: 700;
+}
+.hero-unit-chip .icon { font-size: 16px; }
+.hero-bar-wrap { height: 12px; background: rgba(255,255,255,0.3); border-radius: 999px; overflow: hidden; margin-bottom: 10px; }
+.hero-bar { height: 100%; background: #fff; border-radius: 999px; transition: width 0.5s; }
+.hero-status { font-size: 14px; font-weight: 600; opacity: 0.95; margin-bottom: 16px; }
+.hero-btn { width: 100%; background: #fff !important; color: var(--brand) !important; box-shadow: 0 4px 0 rgba(0,0,0,0.12) !important; }
+.hero-card.done .hero-btn { color: var(--accent-green) !important; }
+.hero-btn + .hero-btn { margin-top: 8px; background: rgba(255,255,255,0.18) !important; color: #fff !important; box-shadow: none !important; }
+
+/* HERO - 계획 없을 때 (empty) */
+.hero-card.empty {
+  background: var(--surface); color: var(--text);
+  border: 2px solid var(--border); box-shadow: var(--shadow-card);
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+}
+[data-theme="dark"] .hero-card.empty { background: var(--surface); }
+.hero-mascot-sm { margin-bottom: 6px; }
+.hero-empty-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+.hero-empty-sub { font-size: 14px; color: var(--text-soft); margin-bottom: 16px; }
+.hero-card.empty .hero-btn { background: var(--accent-orange) !important; color: #fff !important; box-shadow: 0 4px 0 #d97d00 !important; }
+.hero-card.empty .hero-btn + .hero-btn { background: var(--surface) !important; color: var(--text-soft) !important; border: 2px solid var(--border); box-shadow: 0 4px 0 var(--border) !important; }
+
+/* ② 단원 카드 - 이해도 % 행 추가 */
+.unit-pct-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 8px; font-size: 12px; color: var(--text-soft); font-weight: 600;
+}
+.unit-pct-row b { font-size: 14px; color: var(--text); font-weight: 800; }
+
+/* ③ 접이식 학습 현황 */
+.dash-collapse { margin: 18px 16px 0; border: 2px solid var(--border); border-radius: 18px; overflow: hidden; background: var(--surface); }
+.dash-collapse-head {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  padding: 16px 18px; background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 16px; font-weight: 800; color: var(--text);
+}
+.dash-collapse-head .icon { color: var(--brand); font-size: 20px; }
+.dash-collapse-head span { flex: 1; text-align: left; }
+.dash-collapse-head .chevron { color: var(--text-soft); transition: transform 0.2s; }
+.dash-collapse-body {
+  max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease;
+  padding: 0 18px;
+}
+.dash-collapse.open .dash-collapse-body { max-height: 300px; padding: 0 18px 18px; }
