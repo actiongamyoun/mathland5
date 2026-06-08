@@ -14,6 +14,10 @@ const initialState = {
   totalSolved: 0,
   diagnosticDone: false,
 
+  // 현재 선택된 학습 컨텍스트 (자기주도 학습)
+  currentSubject: 'math',
+  currentGrade: 5,
+
   // AI 검수 큐 (부모 검수 대기)
   reviewQueue: [],
 
@@ -66,13 +70,19 @@ window.todayKey = function() {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
 
-// 헬퍼: 단원별 약점 찾기
+// 헬퍼: 단원별 약점 찾기 (현재 과목/학년 안에서)
 window.findWeakestUnit = function() {
-  const units = window.MATHLAND_UNITS;
-  if (!window.MATHLAND_STATE.diagnosticDone) return units[0];
+  const st = window.MATHLAND_STATE;
+  const subj = st.currentSubject || 'math';
+  const grade = st.currentGrade || 5;
+  const units = (window.MATHLAND_UNITS || []).filter(u =>
+    (u.subject || 'math') === subj && u.grade === grade
+  );
+  if (units.length === 0) return window.MATHLAND_UNITS[0];
+  if (!st.diagnosticDone) return units[0];
   return units.reduce((min, u) => {
-    const m = window.MATHLAND_STATE.unitMastery[u.id] ?? 0;
-    return (m < (window.MATHLAND_STATE.unitMastery[min.id] ?? 0)) ? u : min;
+    const m = st.unitMastery[u.id] ?? 0;
+    return (m < (st.unitMastery[min.id] ?? 0)) ? u : min;
   }, units[0]);
 };
 

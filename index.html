@@ -207,21 +207,66 @@
     </div>
   </div>
 
-  <!-- 2. 단원 선택 -->
-  <div class="screen" id="unit-select-screen">
+  <!-- 1.5 과목 선택 -->
+  <div class="screen" id="subject-select-screen">
     <div class="top-bar">
       <button class="back" data-action="back-home"><i class="icon">arrow_back</i></button>
-      <div class="title">단원 선택</div>
+      <div class="title">과목 선택</div>
     </div>
-    <div class="ai-banner">
-      <div class="icon-circle"><i class="icon">auto_awesome</i></div>
-      <div class="ai-text">
-        <div class="ai-label">AI RECOMMEND</div>
-        <div class="ai-msg" id="ai-recommend-text">먼저 진단평가를 해주세요!</div>
+    <div style="padding: 16px; overflow-y: auto; flex: 1;">
+      <p style="font-size: 15px; color: var(--ink-soft); margin: 0 0 16px; font-family: 'Jua', sans-serif;">
+        오늘은 어떤 과목을 공부할까? 🎯
+      </p>
+      <div class="subject-grid" id="subject-grid"></div>
+    </div>
+  </div>
+
+  <!-- 1.7 학년 선택 -->
+  <div class="screen" id="grade-select-screen">
+    <div class="top-bar">
+      <button class="back" data-action="to-subject-select"><i class="icon">arrow_back</i></button>
+      <div class="title" id="grade-select-title">학년 선택</div>
+    </div>
+    <div style="padding: 16px; overflow-y: auto; flex: 1;">
+      <p style="font-size: 15px; color: var(--ink-soft); margin: 0 0 16px; font-family: 'Jua', sans-serif;">
+        몇 학년 공부를 할까?
+      </p>
+      <div class="grade-grid" id="grade-grid"></div>
+    </div>
+  </div>
+
+  <!-- 2. 자기주도 학습 대시보드 (단원 선택) -->
+  <div class="screen" id="unit-select-screen">
+    <div class="top-bar">
+      <button class="back" data-action="to-grade-select"><i class="icon">arrow_back</i></button>
+      <div class="title" id="unit-select-title">내 학습</div>
+    </div>
+    <div style="overflow-y: auto; flex: 1;">
+      <!-- 내 현황 요약 -->
+      <div class="study-overview" id="study-overview"></div>
+
+      <!-- AI 추천 -->
+      <div class="ai-banner" style="margin: 0 16px 14px;">
+        <div class="icon-circle"><i class="icon">auto_awesome</i></div>
+        <div class="ai-text">
+          <div class="ai-label">추천</div>
+          <div class="ai-msg" id="ai-recommend-text">먼저 진단평가를 해주세요!</div>
+        </div>
+        <button class="btn btn-yellow" data-action="ai-recommend">시작</button>
       </div>
-      <button class="btn btn-yellow" data-action="ai-recommend">시작</button>
+
+      <!-- 스스로 단원 선택 -->
+      <div style="padding: 0 16px;">
+        <h3 style="font-family: 'Jua', sans-serif; font-size: 16px; display: flex; align-items: center; gap: 6px; margin: 0 0 12px;">
+          <i class="icon" style="color: var(--rb-blue);">touch_app</i>
+          스스로 골라서 공부하기
+        </h3>
+        <p style="font-size: 13px; color: var(--ink-soft); margin: 0 0 12px;">
+          내가 약한 곳, 더 하고 싶은 곳을 직접 골라봐!
+        </p>
+      </div>
+      <div class="unit-grid" id="unit-grid"></div>
     </div>
-    <div class="unit-grid" id="unit-grid"></div>
   </div>
 
   <!-- 3. 문제 풀이 -->
@@ -408,6 +453,7 @@
 
 <!-- ============ 모듈 로드 (순서 중요) ============ -->
 <!-- 데이터 -->
+<script src="data/subjects.js"></script>
 <script src="data/units.js"></script>
 <script src="data/problems_mix.js"></script>
 <script src="data/problems_div.js"></script>

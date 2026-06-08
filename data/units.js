@@ -5,6 +5,7 @@ window.MATHLAND_UNITS = [
   // === 5학년 1학기 ===
   {
     id: 'mix',
+    subject: 'math',
     name: '자연수의 혼합 계산',
     grade: 5, semester: 1, unitNum: 1,
     icon: 'calculate',
@@ -14,6 +15,7 @@ window.MATHLAND_UNITS = [
   },
   {
     id: 'div',
+    subject: 'math',
     name: '약수와 배수',
     grade: 5, semester: 1, unitNum: 2,
     icon: 'grid_view',
@@ -23,6 +25,7 @@ window.MATHLAND_UNITS = [
   },
   {
     id: 'rule',
+    subject: 'math',
     name: '규칙과 대응',
     grade: 5, semester: 1, unitNum: 3,
     icon: 'pattern',
@@ -32,6 +35,7 @@ window.MATHLAND_UNITS = [
   },
   {
     id: 'frac',
+    subject: 'math',
     name: '약분과 통분',
     grade: 5, semester: 1, unitNum: 4,
     icon: 'pie_chart',
@@ -42,6 +46,7 @@ window.MATHLAND_UNITS = [
   // === 5학년 2학기 ===
   {
     id: 'mult',
+    subject: 'math',
     name: '분수의 곱셈',
     grade: 5, semester: 2, unitNum: 5,
     icon: 'close',
@@ -51,6 +56,7 @@ window.MATHLAND_UNITS = [
   },
   {
     id: 'area',
+    subject: 'math',
     name: '다각형의 둘레와 넓이',
     grade: 5, semester: 2, unitNum: 6,
     icon: 'category',

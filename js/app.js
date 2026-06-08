@@ -8,12 +8,71 @@ window.show = function(screenId) {
   if (!target) return;
   target.classList.add('active');
   if (screenId === 'home-screen') refreshHome();
+  if (screenId === 'subject-select-screen') refreshSubjectSelect();
+  if (screenId === 'grade-select-screen') refreshGradeSelect();
   if (screenId === 'unit-select-screen') refreshUnitSelect();
   if (screenId === 'parent-screen') window.refreshParent();
   if (screenId === 'problem-screen') {
     requestAnimationFrame(() => requestAnimationFrame(window.resizeCanvas));
   }
 };
+
+// ============ 과목 선택 ============
+function refreshSubjectSelect() {
+  const grid = document.getElementById('subject-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  window.MATHLAND_SUBJECTS.forEach(subj => {
+    const card = document.createElement('div');
+    const isReady = subj.status === 'ready';
+    card.className = 'subject-card' + (isReady ? '' : ' locked');
+    card.innerHTML = `
+      ${isReady ? '<span class="ready-badge">OPEN</span>' : '<span class="soon-badge">SOON</span>'}
+      <div class="subject-icon-block" style="background: ${subj.color};">
+        <i class="icon">${subj.icon}</i>
+      </div>
+      <div class="subject-name">${subj.name}</div>
+      <div class="subject-tagline">${subj.tagline}</div>
+    `;
+    if (isReady) {
+      card.addEventListener('click', () => {
+        window.MATHLAND_STATE.currentSubject = subj.id;
+        window.saveState();
+        window.show('grade-select-screen');
+      });
+    }
+    grid.appendChild(card);
+  });
+}
+
+// ============ 학년 선택 ============
+function refreshGradeSelect() {
+  const grid = document.getElementById('grade-grid');
+  if (!grid) return;
+  const subjId = window.MATHLAND_STATE.currentSubject || 'math';
+  const subj = window.getSubject(subjId);
+  document.getElementById('grade-select-title').textContent = `${subj?.name || ''} · 학년 선택`;
+
+  grid.innerHTML = '';
+  window.MATHLAND_GRADES.forEach(g => {
+    const isReady = g.status[subjId] === 'ready';
+    const card = document.createElement('div');
+    card.className = 'grade-card' + (isReady ? '' : ' locked');
+    card.innerHTML = `
+      ${isReady ? '' : '<span class="soon-badge">SOON</span>'}
+      <div class="grade-num">${g.grade}</div>
+      <div class="grade-label">${g.name}</div>
+    `;
+    if (isReady) {
+      card.addEventListener('click', () => {
+        window.MATHLAND_STATE.currentGrade = g.grade;
+        window.saveState();
+        window.show('unit-select-screen');
+      });
+    }
+    grid.appendChild(card);
+  });
+}
 
 // ============ 홈 ============
 function refreshHome() {
@@ -37,21 +96,80 @@ function refreshHome() {
   });
 }
 
-// ============ 단원 선택 ============
+// ============ 자기주도 학습 대시보드 (단원 선택) ============
 function refreshUnitSelect() {
   const state = window.MATHLAND_STATE;
+  const subjId = state.currentSubject || 'math';
+  const grade = state.currentGrade || 5;
+  const subj = window.getSubject(subjId);
+
+  // 타이틀
+  const titleEl = document.getElementById('unit-select-title');
+  if (titleEl) titleEl.textContent = `${subj?.name || ''} ${grade}학년`;
+
+  // 현재 과목/학년 단원만
+  const units = window.getUnitsBySubjectGrade(subjId, grade);
+
+  // ── 학습 현황 요약 ──
+  const overview = document.getElementById('study-overview');
+  if (overview) {
+    // 전체 평균 마스터리
+    let totalMastery = 0;
+    units.forEach(u => { totalMastery += (state.unitMastery[u.id] || 0); });
+    const avgMastery = units.length > 0 ? Math.round(totalMastery / units.length) : 0;
+
+    // 마스터한 단원 수 (70%+)
+    const masteredCount = units.filter(u => (state.unitMastery[u.id] || 0) >= 70).length;
+
+    let masteryRows = '';
+    units.forEach(u => {
+      const m = state.unitMastery[u.id] || 0;
+      let barColor;
+      if (m < 30) barColor = 'var(--rb-red)';
+      else if (m < 70) barColor = 'var(--rb-yellow)';
+      else barColor = 'var(--rb-green)';
+      masteryRows += `
+        <div class="mastery-row">
+          <div class="m-icon" style="background: ${u.color};"><i class="icon">${u.icon}</i></div>
+          <div class="m-name">${u.name}</div>
+          <div class="m-bar-wrap"><div class="m-bar" style="width: ${m}%; background: ${barColor};"></div></div>
+          <div class="m-pct">${m}%</div>
+        </div>
+      `;
+    });
+
+    overview.innerHTML = `
+      <h3><i class="icon" style="color: var(--rb-blue);">insights</i> 내 학습 현황</h3>
+      <div class="overview-stats">
+        <div class="ov-stat">
+          <div class="num" style="color: var(--rb-blue);">${avgMastery}%</div>
+          <div class="lbl">평균</div>
+        </div>
+        <div class="ov-stat">
+          <div class="num" style="color: var(--rb-green);">${masteredCount}</div>
+          <div class="lbl">마스터</div>
+        </div>
+        <div class="ov-stat">
+          <div class="num" style="color: var(--rb-purple);">${units.length}</div>
+          <div class="lbl">단원</div>
+        </div>
+      </div>
+      <div class="mastery-list">${masteryRows}</div>
+    `;
+  }
+
+  // ── 단원 카드 ──
   const grid = document.getElementById('unit-grid');
   grid.innerHTML = '';
-  window.MATHLAND_UNITS.forEach((u, idx) => {
+  units.forEach((u) => {
     const mastery = state.unitMastery[u.id] || 0;
     let levelText, levelClass;
     if (mastery < 30)      { levelText = '쉬움'; levelClass = 'easy'; }
     else if (mastery < 70) { levelText = '보통'; levelClass = 'mid'; }
     else                   { levelText = '심화'; levelClass = 'hard'; }
 
-    // 문제 수 표시 (문제 부족한 단원 안내용)
     const probCount = window.MATHLAND_PROBLEMS_ALL.filter(p => p.id.startsWith(u.id+'-')).length;
-    const isReady = probCount >= 13; // 한 세션 분량
+    const isReady = probCount >= 10;
 
     const card = document.createElement('div');
     card.className = 'unit-card';
@@ -1304,7 +1422,13 @@ function handleAction(action, target) {
       }
       break;
     case 'study':
-      window.show('unit-select-screen');
+      window.show('subject-select-screen');
+      break;
+    case 'to-subject-select':
+      window.show('subject-select-screen');
+      break;
+    case 'to-grade-select':
+      window.show('grade-select-screen');
       break;
     case 'ai-recommend':
       if (!window.MATHLAND_STATE.diagnosticDone) {
