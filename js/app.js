@@ -80,20 +80,31 @@ function refreshHome() {
   document.getElementById('player-level').textContent = state.player.level;
   document.getElementById('coin-count').textContent = state.coins;
   document.getElementById('gem-count').textContent = state.gems;
+
+  const done = state.todaySolved >= 5;
   document.getElementById('mission-text').textContent =
-    state.todaySolved >= 5 ? '오늘의 미션 완료! 🎉' : `문제 ${state.todaySolved}/5 풀기`;
+    done ? '오늘의 미션 완료! 🎉' : `문제 ${state.todaySolved}/5 풀기`;
   document.getElementById('mission-bar').style.width = Math.min(100, state.todaySolved / 5 * 100) + '%';
 
-  document.querySelectorAll('.world-item').forEach(item => {
-    const need = parseInt(item.dataset.unlock);
-    if (state.unlockedItems >= need) {
-      item.classList.remove('locked');
-      item.classList.add('unlocked');
+  // 마스코트 표정 + 인사말 (테마 전환 후에도 다시 그림)
+  const homeM = document.getElementById('home-mascot');
+  const gTitle = document.getElementById('greeting-title');
+  const gSub = document.getElementById('greeting-sub');
+  if (homeM && window.mascotSVG) {
+    if (done) {
+      homeM.innerHTML = window.mascotSVG('cheer', 110);
+      if (gTitle) gTitle.textContent = '오늘 목표 달성! 멋져 ✨';
+      if (gSub) gSub.textContent = '더 풀고 싶으면 언제든 시작해';
+    } else if (state.totalSolved === 0) {
+      homeM.innerHTML = window.mascotSVG('hello', 110);
+      if (gTitle) gTitle.textContent = '안녕! 나는 마리야';
+      if (gSub) gSub.textContent = '오늘 같이 공부 시작해볼까?';
     } else {
-      item.classList.add('locked');
-      item.classList.remove('unlocked');
+      homeM.innerHTML = window.mascotSVG('wink', 110);
+      if (gTitle) gTitle.textContent = '다시 왔구나! 반가워';
+      if (gSub) gSub.textContent = '오늘도 한 걸음 나아가 보자';
     }
-  });
+  }
 }
 
 // ============ 자기주도 학습 대시보드 (단원 선택) ============
@@ -1424,6 +1435,9 @@ function handleAction(action, target) {
     case 'study':
       window.show('subject-select-screen');
       break;
+    case 'toggle-theme':
+      if (window.toggleTheme) window.toggleTheme();
+      break;
     case 'to-subject-select':
       window.show('subject-select-screen');
       break;
@@ -1590,8 +1604,19 @@ function showUpdateAvailable(newWorker) {
   });
 }
 
+// 마스코트 주입
+function injectMascots() {
+  if (!window.mascotSVG) return;
+  const startM = document.getElementById('start-mascot');
+  if (startM) startM.innerHTML = window.mascotSVG('hello', 130);
+  const homeM = document.getElementById('home-mascot');
+  if (homeM) homeM.innerHTML = window.mascotSVG('hello', 110);
+}
+
 // ============ 초기화 ============
 function boot() {
+  if (window.initTheme) window.initTheme();
+  injectMascots();
   window.initCanvas();
   registerServiceWorker();
 

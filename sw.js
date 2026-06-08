@@ -11,7 +11,7 @@
 //
 // 버전 변경 시: CACHE_VERSION 숫자만 올리면 옛 캐시 자동 삭제됨
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = `mathland5-${CACHE_VERSION}`;
 
 // 설치 시 미리 캐시할 핵심 자산
@@ -20,6 +20,8 @@ const PRECACHE_ASSETS = [
   './index.html',
   './manifest.json',
   './css/styles.css',
+  './js/theme.js',
+  './js/mascot.js',
   './js/state.js',
   './js/canvas.js',
   './js/scoring.js',

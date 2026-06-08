@@ -7,8 +7,8 @@
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1a7aff">
-<meta name="description" content="초등 5학년 수학 학습 앱 - 펜 필기 기반 자기주도 학습">
+<meta name="theme-color" content="#1cb0f6">
+<meta name="description" content="스스로 공부하는 힘을 길러주는 학습 코칭 앱">
 
 <!-- iOS Safari PWA -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,11 +21,16 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 
+<!-- 폰트: Pretendard 단독 + Material Icons -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Jua&display=swap" rel="stylesheet" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+<!-- 테마 즉시 적용 (FOUC 방지) -->
+<script>
+(function(){try{var s=localStorage.getItem('mathland5_theme');var t=(s==='light'||s==='dark')?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
 
 <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -35,47 +40,28 @@
 
   <!-- 0. 시작 화면 -->
   <div class="screen active" id="start-screen">
-    <button class="parent-btn" data-action="parent" title="부모 모드">
-      <i class="icon">family_restroom</i>
+    <button class="theme-toggle" data-action="toggle-theme" title="테마 전환">
+      <i class="icon">dark_mode</i>
     </button>
 
-    <div class="logo-block">
-      <div class="logo">MATHLAND 5</div>
-      <div class="logo-sub">★ 나만의 수학 월드 ★</div>
-    </div>
+    <div class="mascot bob" id="start-mascot"></div>
 
-    <div class="tagline">스스로 키우는 똑똑이 모험!</div>
-
-    <div class="pixel-char-wrap">
-      <span class="sparkle">✨</span>
-      <span class="sparkle">⭐</span>
-      <span class="sparkle">✨</span>
-      <svg class="pixel-char" viewBox="0 0 16 16" shape-rendering="crispEdges">
-        <rect x="5" y="2" width="6" height="1" fill="#ff4ba0"/>
-        <rect x="4" y="3" width="8" height="1" fill="#ff4ba0"/>
-        <rect x="5" y="4" width="6" height="3" fill="#ffd9b3"/>
-        <rect x="6" y="5" width="1" height="1" fill="#1a1a2e"/>
-        <rect x="9" y="5" width="1" height="1" fill="#1a1a2e"/>
-        <rect x="7" y="6" width="2" height="1" fill="#ff4ba0"/>
-        <rect x="4" y="7" width="8" height="4" fill="#1a7aff"/>
-        <rect x="5" y="8" width="6" height="1" fill="#ffd23f"/>
-        <rect x="3" y="8" width="1" height="3" fill="#1a7aff"/>
-        <rect x="12" y="8" width="1" height="3" fill="#1a7aff"/>
-        <rect x="5" y="11" width="2" height="3" fill="#0e4ea8"/>
-        <rect x="9" y="11" width="2" height="3" fill="#0e4ea8"/>
-        <rect x="5" y="14" width="2" height="1" fill="#1a1a2e"/>
-        <rect x="9" y="14" width="2" height="1" fill="#1a1a2e"/>
-      </svg>
-    </div>
+    <div class="brand-name">MATHLAND<span class="acc"> 5</span></div>
+    <div class="tagline">가르치지 않아요. 스스로 푸는 힘을 키워요.</div>
+    <div class="sub-tagline">매일 조금씩, 나만의 학습 코칭</div>
 
     <div class="start-btns">
-      <button class="btn btn-yellow btn-mega" data-action="continue">
+      <button class="btn btn-blue btn-mega" data-action="continue">
         <i class="icon">play_arrow</i> 이어하기
       </button>
-      <button class="btn btn-pink btn-mega" data-action="diagnostic">
+      <button class="btn btn-ghost btn-mega" data-action="diagnostic">
         <i class="icon">stars</i> 진단평가
       </button>
     </div>
+
+    <button class="parent-btn" data-action="parent" title="부모 모드" style="top: auto; bottom: 18px; right: 18px;">
+      <i class="icon">family_restroom</i>
+    </button>
   </div>
 
   <!-- 1. 홈 -->
@@ -91,6 +77,9 @@
       <div class="stats-row">
         <div class="stat-chip coin"><i class="icon">monetization_on</i><span id="coin-count">0</span></div>
         <div class="stat-chip gem"><i class="icon">diamond</i><span id="gem-count">0</span></div>
+        <button class="theme-toggle" data-action="toggle-theme" title="테마 전환">
+          <i class="icon">dark_mode</i>
+        </button>
         <button class="parent-btn-inline" data-action="parent" title="부모 모드">
           <i class="icon">family_restroom</i>
         </button>
@@ -98,110 +87,23 @@
     </div>
 
     <div class="world">
-      <div class="sun"></div>
-      <div class="clouds"></div>
-      <div class="ground"></div>
-
       <div class="world-canvas">
-        <svg class="avatar" viewBox="0 0 16 16" shape-rendering="crispEdges">
-          <rect x="5" y="2" width="6" height="1" fill="#ff4ba0"/>
-          <rect x="4" y="3" width="8" height="1" fill="#ff4ba0"/>
-          <rect x="5" y="4" width="6" height="3" fill="#ffd9b3"/>
-          <rect x="6" y="5" width="1" height="1" fill="#1a1a2e"/>
-          <rect x="9" y="5" width="1" height="1" fill="#1a1a2e"/>
-          <rect x="7" y="6" width="2" height="1" fill="#ff4ba0"/>
-          <rect x="4" y="7" width="8" height="4" fill="#1a7aff"/>
-          <rect x="5" y="8" width="6" height="1" fill="#ffd23f"/>
-          <rect x="3" y="8" width="1" height="3" fill="#1a7aff"/>
-          <rect x="12" y="8" width="1" height="3" fill="#1a7aff"/>
-          <rect x="5" y="11" width="2" height="3" fill="#0e4ea8"/>
-          <rect x="9" y="11" width="2" height="3" fill="#0e4ea8"/>
-          <rect x="5" y="14" width="2" height="1" fill="#1a1a2e"/>
-          <rect x="9" y="14" width="2" height="1" fill="#1a1a2e"/>
-        </svg>
+        <div class="mascot bob" id="home-mascot"></div>
+        <div id="home-greeting" style="text-align:center;">
+          <div style="font-size:22px; font-weight:800; letter-spacing:-0.5px;" id="greeting-title">안녕! 오늘도 같이 공부할까?</div>
+          <div style="font-size:15px; color:var(--text-soft); font-weight:600; margin-top:6px;" id="greeting-sub">아래 버튼을 눌러 시작해봐</div>
+        </div>
       </div>
-
-      <!-- 월드 아이템 -->
-      <svg class="world-item locked" data-unlock="3" style="left: 8%; bottom: 24%;" width="64" viewBox="0 0 16 16" shape-rendering="crispEdges">
-        <rect x="7" y="9" width="2" height="6" fill="#7a4a1f"/>
-        <rect x="4" y="3" width="8" height="6" fill="#2ecc40"/>
-        <rect x="5" y="2" width="6" height="1" fill="#2ecc40"/>
-        <rect x="3" y="5" width="1" height="3" fill="#2ecc40"/>
-        <rect x="12" y="5" width="1" height="3" fill="#2ecc40"/>
-        <rect x="6" y="5" width="1" height="1" fill="#1d8a2a"/>
-        <rect x="9" y="6" width="1" height="1" fill="#1d8a2a"/>
-      </svg>
-      <svg class="world-item locked" data-unlock="6" style="right: 10%; bottom: 24%;" width="100" viewBox="0 0 20 16" shape-rendering="crispEdges">
-        <rect x="3" y="6" width="14" height="8" fill="#ffd9b3"/>
-        <rect x="2" y="5" width="16" height="1" fill="#a06cd5"/>
-        <rect x="3" y="4" width="14" height="1" fill="#a06cd5"/>
-        <rect x="5" y="3" width="10" height="1" fill="#a06cd5"/>
-        <rect x="7" y="2" width="6" height="1" fill="#a06cd5"/>
-        <rect x="9" y="9" width="2" height="5" fill="#7a4a1f"/>
-        <rect x="5" y="8" width="3" height="3" fill="#1a7aff"/>
-        <rect x="12" y="8" width="3" height="3" fill="#1a7aff"/>
-        <rect x="6" y="8" width="1" height="3" fill="#87ceeb"/>
-        <rect x="13" y="8" width="1" height="3" fill="#87ceeb"/>
-      </svg>
-      <svg class="world-item locked" data-unlock="1" style="left: 22%; bottom: 18%;" width="32" viewBox="0 0 16 16" shape-rendering="crispEdges">
-        <rect x="7" y="9" width="2" height="6" fill="#2ecc40"/>
-        <rect x="6" y="6" width="4" height="3" fill="#ff4ba0"/>
-        <rect x="7" y="7" width="2" height="1" fill="#ffd23f"/>
-        <rect x="5" y="7" width="1" height="1" fill="#ff4ba0"/>
-        <rect x="10" y="7" width="1" height="1" fill="#ff4ba0"/>
-      </svg>
-      <svg class="world-item locked" data-unlock="2" style="right: 28%; bottom: 18%;" width="32" viewBox="0 0 16 16" shape-rendering="crispEdges">
-        <rect x="7" y="9" width="2" height="6" fill="#2ecc40"/>
-        <rect x="6" y="6" width="4" height="3" fill="#ffd23f"/>
-        <rect x="7" y="7" width="2" height="1" fill="#ff4ba0"/>
-        <rect x="5" y="7" width="1" height="1" fill="#ffd23f"/>
-        <rect x="10" y="7" width="1" height="1" fill="#ffd23f"/>
-      </svg>
-      <svg class="world-item locked" data-unlock="4" style="left: 38%; bottom: 20%;" width="80" viewBox="0 0 32 12" shape-rendering="crispEdges">
-        <rect x="0" y="4" width="32" height="2" fill="#a06cd5"/>
-        <rect x="0" y="8" width="32" height="2" fill="#a06cd5"/>
-        <rect x="2" y="2" width="2" height="10" fill="#7a4a1f"/>
-        <rect x="10" y="2" width="2" height="10" fill="#7a4a1f"/>
-        <rect x="18" y="2" width="2" height="10" fill="#7a4a1f"/>
-        <rect x="26" y="2" width="2" height="10" fill="#7a4a1f"/>
-      </svg>
-      <svg class="world-item locked" data-unlock="5" style="right: 4%; bottom: 19%;" width="55" viewBox="0 0 16 16" shape-rendering="crispEdges">
-        <rect x="3" y="6" width="10" height="8" fill="#7a4a1f"/>
-        <rect x="3" y="6" width="10" height="2" fill="#ffd23f"/>
-        <rect x="7" y="9" width="2" height="2" fill="#ffd23f"/>
-        <rect x="3" y="5" width="10" height="1" fill="#5a3515"/>
-      </svg>
-      <svg class="world-item locked" data-unlock="8" style="left: 50%; top: 22%;" width="44" viewBox="0 0 16 16" shape-rendering="crispEdges">
-        <rect x="7" y="2" width="2" height="2" fill="#ffd23f"/>
-        <rect x="5" y="4" width="6" height="2" fill="#ffd23f"/>
-        <rect x="3" y="6" width="10" height="2" fill="#ffd23f"/>
-        <rect x="5" y="8" width="6" height="2" fill="#ffd23f"/>
-        <rect x="4" y="10" width="3" height="2" fill="#ffd23f"/>
-        <rect x="9" y="10" width="3" height="2" fill="#ffd23f"/>
-      </svg>
-      <svg class="world-item locked" data-unlock="10" style="left: 18%; bottom: 13%;" width="60" viewBox="0 0 16 16" shape-rendering="crispEdges">
-        <rect x="4" y="6" width="6" height="4" fill="#c79b1f"/>
-        <rect x="3" y="5" width="2" height="2" fill="#c79b1f"/>
-        <rect x="9" y="5" width="2" height="2" fill="#c79b1f"/>
-        <rect x="3" y="4" width="1" height="2" fill="#7a4a1f"/>
-        <rect x="10" y="4" width="1" height="2" fill="#7a4a1f"/>
-        <rect x="4" y="7" width="1" height="1" fill="#1a1a2e"/>
-        <rect x="9" y="7" width="1" height="1" fill="#1a1a2e"/>
-        <rect x="6" y="8" width="2" height="1" fill="#ff4ba0"/>
-        <rect x="10" y="9" width="3" height="2" fill="#c79b1f"/>
-        <rect x="4" y="10" width="2" height="3" fill="#c79b1f"/>
-        <rect x="8" y="10" width="2" height="3" fill="#c79b1f"/>
-      </svg>
     </div>
 
     <div class="home-bottom">
       <div class="mission-card">
-        <div class="label">DAILY MISSION</div>
+        <div class="label">오늘의 미션</div>
         <div class="text" id="mission-text">문제 0/5 풀기</div>
         <div class="progress"><div class="progress-bar" id="mission-bar" style="width: 0%"></div></div>
       </div>
-      <button class="btn btn-pink btn-big" data-action="study" style="min-width: 180px;">
-        <i class="icon">school</i>
+      <button class="btn btn-blue btn-big" data-action="study" style="min-width: 170px;">
+        <i class="icon">play_arrow</i>
         공부하러!
       </button>
     </div>
@@ -464,6 +366,8 @@
 <script src="data/index.js"></script>
 
 <!-- 코어 모듈 -->
+<script src="js/theme.js"></script>
+<script src="js/mascot.js"></script>
 <script src="js/state.js"></script>
 <script src="js/canvas.js"></script>
 <script src="js/scoring.js"></script>
