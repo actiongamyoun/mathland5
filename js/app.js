@@ -205,6 +205,174 @@ function refreshUnitSelect() {
     state.diagnosticDone
       ? `오늘은 "${weakest.name}"부터 풀어볼까?`
       : '먼저 진단평가를 해주세요!';
+
+  renderWeeklyPlan();
+}
+
+// ============ 주간 학습 계획 렌더링 ============
+function renderWeeklyPlan() {
+  const area = document.getElementById('weekly-plan-area');
+  if (!area) return;
+  const plan = window.getActivePlan();
+
+  if (!plan) {
+    // 계획 없음 → 세우기 카드
+    area.innerHTML = `
+      <div class="plan-empty">
+        <div class="pe-icon"><i class="icon">event_note</i></div>
+        <h3>이번 주 학습 계획</h3>
+        <p>이번 주에 어떤 단원을 공부할지 정해볼까?<br>마리가 도와줄게!</p>
+        <button class="btn btn-orange" data-action="make-plan"><i class="icon">add</i> 계획 세우기</button>
+      </div>`;
+    return;
+  }
+
+  // 계획 있음 → 진행 카드
+  const units = window.getUnitsBySubjectGrade(window.MATHLAND_STATE.currentSubject, window.MATHLAND_STATE.currentGrade);
+  const chips = (plan.goalUnits || []).map(uid => {
+    const u = units.find(x => x.id === uid);
+    if (!u) return '';
+    return `<span class="plan-unit-chip"><span style="color:${u.color}"><i class="icon">${u.icon}</i></span>${u.name}</span>`;
+  }).join('');
+  const done = plan.doneSessions || 0;
+  const target = plan.targetSessions || 1;
+  const pct = Math.min(100, Math.round(done / target * 100));
+
+  area.innerHTML = `
+    <div class="plan-card">
+      <div class="plan-head">
+        <i class="icon">event_available</i>
+        <h3>이번 주 계획</h3>
+        <span class="plan-progress-text">${done}/${target}</span>
+      </div>
+      <div class="plan-units">${chips}</div>
+      <div class="plan-bar-wrap"><div class="plan-bar" style="width:${pct}%"></div></div>
+      <div class="plan-sessions">${done >= target ? '이번 주 목표 달성! 🎉' : `목표까지 ${target - done}번 더!`}</div>
+    </div>`;
+}
+
+// 계획 세우기 모달 (단원 선택)
+let _planSelected = [];
+window.openPlanPicker = function() {
+  _planSelected = [];
+  const st = window.MATHLAND_STATE;
+  const units = window.getUnitsBySubjectGrade(st.currentSubject, st.currentGrade);
+
+  const items = units.map(u => {
+    const m = st.unitMastery[u.id] ?? 0;
+    return `
+      <div class="plan-pick-item" data-unit="${u.id}" onclick="window.togglePlanUnit('${u.id}')">
+        <div class="pick-icon" style="background:${u.color}"><i class="icon">${u.icon}</i></div>
+        <div class="pick-name">${u.name}<div style="font-size:12px;color:var(--text-soft);font-weight:600">${m}% 이해</div></div>
+        <div class="pick-check"><i class="icon">check</i></div>
+      </div>`;
+  }).join('');
+
+  const modal = document.getElementById('coach-modal');
+  const content = document.getElementById('coach-modal-content');
+  content.innerHTML = `
+    <div style="text-align:center;">
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:4px;">이번 주 계획 세우기</h2>
+      <p style="font-size:14px;color:var(--text-soft);margin-bottom:8px;">집중할 단원을 1~3개 골라봐 (직접 선택!)</p>
+      <div class="plan-pick-list">${items}</div>
+      <button class="btn btn-orange" style="width:100%;" data-action="confirm-plan">
+        <i class="icon">check_circle</i> 이걸로 계획 세우기
+      </button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px;" onclick="window.closeCoachModal()">취소</button>
+    </div>`;
+  modal.classList.add('active');
+};
+
+window.togglePlanUnit = function(uid) {
+  const idx = _planSelected.indexOf(uid);
+  if (idx >= 0) {
+    _planSelected.splice(idx, 1);
+  } else {
+    if (_planSelected.length >= 3) {
+      // 최대 3개
+      return;
+    }
+    _planSelected.push(uid);
+  }
+  // UI 갱신
+  document.querySelectorAll('#coach-modal-content .plan-pick-item').forEach(el => {
+    el.classList.toggle('selected', _planSelected.includes(el.dataset.unit));
+  });
+};
+
+// 계획 확정 → 저장 → 마리 코칭
+window.confirmPlan = async function() {
+  if (_planSelected.length === 0) {
+    // 아무것도 안 골랐으면 안내
+    const list = document.querySelector('#coach-modal-content .plan-pick-list');
+    if (list) list.style.outline = '2px solid var(--accent-pink)';
+    return;
+  }
+
+  const st = window.MATHLAND_STATE;
+  const units = window.getUnitsBySubjectGrade(st.currentSubject, st.currentGrade);
+  const subj = window.getSubject(st.currentSubject);
+
+  // 계획 저장 (단원 수 × 2회 목표)
+  st.weeklyPlan = {
+    weekStart: window.getWeekStart(),
+    goalUnits: [..._planSelected],
+    targetSessions: _planSelected.length * 2,
+    doneSessions: 0,
+  };
+  window.saveState();
+
+  // 마리 코칭 호출 (로딩 표시)
+  const content = document.getElementById('coach-modal-content');
+  content.innerHTML = `
+    <div style="text-align:center;">
+      <div class="coach-modal-mascot">${window.mascotSVG('think', 90)}</div>
+      <div class="coach-loading">
+        마리가 생각 중<span class="dot-pulse"><span></span><span></span><span></span></span>
+      </div>
+    </div>`;
+
+  // 코칭에 보낼 데이터
+  const selectedUnits = _planSelected.map(uid => {
+    const u = units.find(x => x.id === uid);
+    return { name: u ? u.name : uid, mastery: st.unitMastery[uid] ?? 0 };
+  });
+
+  const message = await window.getCoaching('plan', {
+    units: selectedUnits,
+    grade: st.currentGrade,
+    subjectName: subj ? subj.name : '수학',
+  });
+
+  // 코칭 멘트 표시
+  showCoachMessage(message, 'cheer');
+
+  // 대시보드 갱신
+  refreshUnitSelect();
+};
+
+// 코칭 말풍선 표시 (마리 + 멘트)
+function showCoachMessage(message, mood) {
+  const modal = document.getElementById('coach-modal');
+  const content = document.getElementById('coach-modal-content');
+  content.innerHTML = `
+    <div style="text-align:center;">
+      <div class="coach-modal-mascot">${window.mascotSVG(mood || 'hello', 100)}</div>
+      <div class="coach-bubble-text">${escapeHtml(message)}</div>
+      <button class="btn btn-blue" style="width:100%;margin-top:16px;" onclick="window.closeCoachModal()">
+        좋아! <i class="icon">thumb_up</i>
+      </button>
+    </div>`;
+  modal.classList.add('active');
+}
+
+window.closeCoachModal = function() {
+  document.getElementById('coach-modal').classList.remove('active');
+};
+
+// 간단한 HTML 이스케이프
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
 // ============ 문제 풀이 흐름 ============
@@ -942,6 +1110,7 @@ function endSession() {
   const results = [];      // 'correct' | 'wrong' | 'review'
   let correctCount = 0;
   let wrongCount = 0;
+  const unitAttempts = {}; // { unitId: { attempts, wrong } } — 막힘 감지용
 
   for (let i = 0; i < s.problems.length; i++) {
     const p = s.problems[i];
@@ -958,6 +1127,11 @@ function endSession() {
     if (state.unitMastery[unitId] === undefined) state.unitMastery[unitId] = 50;
     if (score.result === 'correct') state.unitMastery[unitId] = Math.min(100, state.unitMastery[unitId] + 6);
     else if (score.result === 'wrong') state.unitMastery[unitId] = Math.max(0, state.unitMastery[unitId] - 3);
+
+    // 단원별 시도/오답 집계
+    if (!unitAttempts[unitId]) unitAttempts[unitId] = { attempts: 0, wrong: 0 };
+    unitAttempts[unitId].attempts++;
+    if (score.result === 'wrong') unitAttempts[unitId].wrong++;
 
     // 푼 문제 기록
     window.recordSolved(p.id);
@@ -1031,7 +1205,28 @@ function endSession() {
   s.earnedCoins = earnedCoins;
   s.earnedGems = earnedGems;
 
+  // 단원별 막힘 기록 업데이트 + 막힌 단원 감지
+  let struggledUnit = null;
+  Object.keys(unitAttempts).forEach(uid => {
+    const { attempts, wrong } = unitAttempts[uid];
+    window.recordStruggle(uid, attempts, wrong);
+    if (window.isStruggling(uid)) struggledUnit = uid;
+  });
+
+  // 주간 계획 진행도 갱신 — 계획에 포함된 단원을 풀었으면 +1
+  const plan = window.getActivePlan();
+  if (plan) {
+    const playedPlanUnit = Object.keys(unitAttempts).some(uid => (plan.goalUnits || []).includes(uid));
+    if (playedPlanUnit) {
+      plan.doneSessions = (plan.doneSessions || 0) + 1;
+      state.weeklyPlan = plan;
+    }
+  }
+
   window.saveState();
+
+  // 막힌 단원이 있으면, 결과 화면 본 뒤 마리가 위로 (세션 종료 흐름 방해 안 하게 플래그만)
+  s._struggledUnit = struggledUnit;
 
   // 결과 화면으로
   showSessionResult();
@@ -1134,6 +1329,24 @@ function showSessionResult() {
 
   // 약한 콘페티 (성취감)
   if (correctCount > total / 2) spawnConfetti();
+
+  // 막힌 단원이 있으면, 잠깐 뒤 마리가 위로 (결과 화면을 먼저 보게 1.2초 딜레이)
+  if (s._struggledUnit) {
+    const uid = s._struggledUnit;
+    s._struggledUnit = null; // 중복 방지
+    const units = window.getUnitsBySubjectGrade(window.MATHLAND_STATE.currentSubject, window.MATHLAND_STATE.currentGrade);
+    const u = units.find(x => x.id === uid);
+    const struggle = (window.MATHLAND_STATE.unitStruggle || {})[uid] || {};
+    setTimeout(async () => {
+      // 로딩 없이 조용히 받아와서, 받으면 띄움
+      const msg = await window.getCoaching('stuck', {
+        unitName: u ? u.name : '이 단원',
+        recentWrong: struggle.wrong || 0,
+        totalAttempts: struggle.attempts || 0,
+      });
+      showCoachMessage(msg, 'sad');
+    }, 1200);
+  }
 }
 
 // 결과 화면 → 회고 화면
@@ -1456,6 +1669,12 @@ function handleAction(action, target) {
           setTimeout(loadCurrentProblem, 50);
         }
       }
+      break;
+    case 'make-plan':
+      window.openPlanPicker();
+      break;
+    case 'confirm-plan':
+      window.confirmPlan();
       break;
     case 'back-home':
       window.resetPin();

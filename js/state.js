@@ -32,6 +32,14 @@ const initialState = {
   // 오늘의 회고 (1일 1개)
   reflections: [], // [{ date: 'YYYY-MM-DD', text, learned, harder }]
 
+  // 주간 학습 계획 (자기주도)
+  // { weekStart: 'YYYY-MM-DD', goalUnits: [unitId], targetSessions: N, doneSessions: N }
+  weeklyPlan: null,
+
+  // 단원별 최근 시도 기록 (막혔을 때 감지용)
+  // { unitId: { attempts: N, wrong: N } }
+  unitStruggle: {},
+
   // 현재 학습 세션 (저장 안 함)
   session: null,
 };
@@ -84,6 +92,46 @@ window.findWeakestUnit = function() {
     const m = st.unitMastery[u.id] ?? 0;
     return (m < (st.unitMastery[min.id] ?? 0)) ? u : min;
   }, units[0]);
+};
+
+// 이번 주 월요일 날짜 (YYYY-MM-DD) — 주간 계획 기준
+window.getWeekStart = function() {
+  const now = new Date();
+  const day = now.getDay(); // 0(일)~6(토)
+  const diff = (day === 0 ? -6 : 1 - day); // 월요일로
+  const mon = new Date(now);
+  mon.setDate(now.getDate() + diff);
+  const y = mon.getFullYear();
+  const m = String(mon.getMonth() + 1).padStart(2, '0');
+  const d = String(mon.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+// 현재 유효한 주간 계획 가져오기 (지난 주 거면 만료 처리)
+window.getActivePlan = function() {
+  const st = window.MATHLAND_STATE;
+  const wk = window.getWeekStart();
+  if (st.weeklyPlan && st.weeklyPlan.weekStart === wk) return st.weeklyPlan;
+  return null; // 없거나 만료됨
+};
+
+// 막힘 기록 업데이트 (세션 채점 후 호출)
+window.recordStruggle = function(unitId, attempts, wrong) {
+  const st = window.MATHLAND_STATE;
+  if (!st.unitStruggle) st.unitStruggle = {};
+  const cur = st.unitStruggle[unitId] || { attempts: 0, wrong: 0 };
+  cur.attempts += attempts;
+  cur.wrong += wrong;
+  st.unitStruggle[unitId] = cur;
+  window.saveState();
+};
+
+// 막힘 여부 판단: 최근 시도에서 틀린 비율이 높으면 true
+window.isStruggling = function(unitId) {
+  const st = window.MATHLAND_STATE;
+  const s = (st.unitStruggle || {})[unitId];
+  if (!s || s.attempts < 4) return false; // 최소 4번은 해봐야
+  return (s.wrong / s.attempts) >= 0.6; // 60% 이상 틀림
 };
 
 console.log('[MATHLAND] state 로드 완료');

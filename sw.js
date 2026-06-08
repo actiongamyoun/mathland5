@@ -5,7 +5,7 @@
 //   루트(/)=랜딩, /index.html=앱 을 SW가 절대 서로 덮어쓰지 않게 함.
 //   (이전 버전이 루트를 캐시된 index.html로 바꿔버리던 문제 해결)
 
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9';
 const CACHE_NAME = `mathland5-${CACHE_VERSION}`;
 
 // 정적 자원만 미리 캐시 (HTML 문서는 프리캐시하지 않음 → navigate는 항상 네트워크)
@@ -21,6 +21,7 @@ const PRECACHE_ASSETS = [
   './js/scoring.js',
   './js/session.js',
   './js/parent.js',
+  './js/coach.js',
   './js/app.js',
   './data/subjects.js',
   './data/units.js',

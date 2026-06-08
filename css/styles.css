@@ -688,3 +688,64 @@ body {
 @keyframes float-up { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx,0), -180px) scale(0.5); opacity: 0; } }
 .confetti { position: fixed; width: 11px; height: 11px; pointer-events: none; z-index: 2000; animation: confetti-fall 1.6s ease-out forwards; }
 @keyframes confetti-fall { 0% { transform: translateY(-40px) rotate(0); opacity: 1; } 100% { transform: translateY(380px) rotate(720deg); opacity: 0; } }
+
+/* ============ 18. 주간 학습 계획 ============ */
+.plan-card {
+  background: linear-gradient(135deg, #fff4e6, #ffe8cc);
+  border: 2px solid #ffd9a0; border-radius: var(--r-lg);
+  padding: 18px;
+}
+[data-theme="dark"] .plan-card { background: linear-gradient(135deg, #2e2416, #3a2e1a); border-color: #4a3a20; }
+.plan-card .plan-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.plan-card .plan-head .icon { color: var(--accent-orange); font-size: 22px; }
+.plan-card .plan-head h3 { font-size: 16px; font-weight: 800; flex: 1; }
+.plan-card .plan-progress-text { font-size: 13px; font-weight: 800; color: var(--accent-orange); }
+.plan-units { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.plan-unit-chip {
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: var(--r-pill); padding: 6px 12px; font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; gap: 5px;
+}
+.plan-unit-chip .icon { font-size: 16px; }
+.plan-bar-wrap { height: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-pill); overflow: hidden; margin-bottom: 6px; }
+.plan-bar { height: 100%; background: var(--accent-orange); border-radius: var(--r-pill); transition: width 0.5s; }
+.plan-sessions { font-size: 12px; color: var(--text-soft); text-align: right; font-weight: 600; }
+
+/* 계획 없을 때 - 세우기 버튼 카드 */
+.plan-empty {
+  background: var(--surface); border: 2px dashed var(--border-strong);
+  border-radius: var(--r-lg); padding: 22px; text-align: center;
+}
+.plan-empty .pe-icon { font-size: 40px; color: var(--accent-orange); margin-bottom: 8px; }
+.plan-empty h3 { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+.plan-empty p { font-size: 13px; color: var(--text-soft); margin-bottom: 16px; line-height: 1.5; }
+
+/* 코칭 말풍선 (마리) */
+.coach-modal-mascot { display: flex; justify-content: center; margin-bottom: 10px; }
+.coach-bubble-text {
+  background: var(--brand-soft); border-radius: 16px;
+  padding: 16px 18px; font-size: 16px; line-height: 1.6; font-weight: 600;
+  color: var(--text); position: relative; text-align: left;
+}
+.coach-loading { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; color: var(--text-soft); font-weight: 600; }
+.coach-loading .dot-pulse { display: inline-flex; gap: 4px; }
+.coach-loading .dot-pulse span { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); animation: dotp 1.2s infinite; }
+.coach-loading .dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+.coach-loading .dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotp { 0%,60%,100% { opacity: 0.3; transform: scale(0.8); } 30% { opacity: 1; transform: scale(1); } }
+
+/* 계획 세우기 모달 - 단원 선택 */
+.plan-pick-list { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; text-align: left; }
+.plan-pick-item {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  border: 2px solid var(--border); border-radius: var(--r-md); cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.plan-pick-item.selected { border-color: var(--brand); background: var(--brand-soft); }
+.plan-pick-item .pick-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+.plan-pick-item .pick-icon .icon { font-size: 20px; }
+.plan-pick-item .pick-name { flex: 1; font-weight: 700; font-size: 15px; }
+.plan-pick-item .pick-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border-strong); display: flex; align-items: center; justify-content: center; }
+.plan-pick-item.selected .pick-check { background: var(--brand); border-color: var(--brand); }
+.plan-pick-item.selected .pick-check .icon { color: #fff; font-size: 16px; }
+.plan-pick-item:not(.selected) .pick-check .icon { display: none; }
