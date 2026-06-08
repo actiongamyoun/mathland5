@@ -367,6 +367,16 @@ footer .foot-logo { font-weight: 800; color: var(--ink-soft); margin-bottom: 8px
   가르치지 않아요. 스스로 푸는 힘을 키워요.
 </footer>
 
+<script>
+// 랜딩은 SW가 필요 없음. 예전에 앱에서 깔린 SW가 루트(/)를 가로채
+// 앱으로 덮어버리는 문제를 막기 위해, 랜딩에서는 옛 SW를 해제한다.
+// (앱(index.html)에 들어가면 거기서 SW를 다시 정상 등록함)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(r) { r.unregister(); });
+  }).catch(function(){});
+}
+</script>
 <script src="js/mascot.js"></script>
 <script>
 // 마스코트 주입

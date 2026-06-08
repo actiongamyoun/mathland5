@@ -1,24 +1,15 @@
-// MATHLAND 5 — Service Worker
-// 역할:
-//   1. 앱 자원(HTML/CSS/JS/이미지) 캐시 → 빠른 재접속, 오프라인 지원
-//   2. 새 버전 배포 시 자동 갱신 (사용자에게 새로고침 안내)
+// MATHLAND 5 — Service Worker v7
+// 역할: 정적 자원 캐시(빠른 로딩/오프라인) + 새 버전 자동 갱신
 //
-// 캐시 전략:
-//   - HTML(index.html): Network-first (네트워크 우선, 실패 시 캐시)
-//     → 새 코드를 빨리 받아오기 위함
-//   - 그 외 정적 자산: Cache-first (캐시 우선, 캐시에 없으면 네트워크)
-//     → 빠른 로딩
-//
-// 버전 변경 시: CACHE_VERSION 숫자만 올리면 옛 캐시 자동 삭제됨
+// ★ v7 핵심 수정: navigate(페이지 이동) 요청은 항상 네트워크 그대로 사용.
+//   루트(/)=랜딩, /index.html=앱 을 SW가 절대 서로 덮어쓰지 않게 함.
+//   (이전 버전이 루트를 캐시된 index.html로 바꿔버리던 문제 해결)
 
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const CACHE_NAME = `mathland5-${CACHE_VERSION}`;
 
-// 설치 시 미리 캐시할 핵심 자산
+// 정적 자원만 미리 캐시 (HTML 문서는 프리캐시하지 않음 → navigate는 항상 네트워크)
 const PRECACHE_ASSETS = [
-  './',
-  './index.html',
-  './landing.html',
   './manifest.json',
   './css/styles.css',
   './js/theme.js',
@@ -46,92 +37,68 @@ const PRECACHE_ASSETS = [
 
 // ============ 설치 ============
 self.addEventListener('install', event => {
-  console.log('[SW] 설치 중...', CACHE_VERSION);
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        // 핵심 자산 미리 캐시 (실패해도 진행)
-        return Promise.allSettled(
-          PRECACHE_ASSETS.map(url => cache.add(url).catch(err => {
-            console.warn('[SW] 캐시 실패:', url, err.message);
-          }))
-        );
-      })
-      .then(() => self.skipWaiting())  // 새 SW 즉시 활성화
+      .then(cache => Promise.allSettled(
+        PRECACHE_ASSETS.map(url => cache.add(url).catch(() => {}))
+      ))
+      .then(() => self.skipWaiting())
   );
 });
 
-// ============ 활성화 (옛날 캐시 정리) ============
+// ============ 활성화 (옛 캐시 정리) ============
 self.addEventListener('activate', event => {
-  console.log('[SW] 활성화', CACHE_VERSION);
   event.waitUntil(
-    caches.keys().then(names => {
-      return Promise.all(
-        names
-          .filter(name => name.startsWith('mathland5-') && name !== CACHE_NAME)
-          .map(name => {
-            console.log('[SW] 옛 캐시 삭제:', name);
-            return caches.delete(name);
-          })
-      );
-    }).then(() => self.clients.claim())  // 모든 탭에 즉시 적용
+    caches.keys().then(names => Promise.all(
+      names.filter(n => n.startsWith('mathland5-') && n !== CACHE_NAME)
+           .map(n => caches.delete(n))
+    )).then(() => self.clients.claim())
   );
 });
 
-// ============ 요청 가로채기 ============
+// ============ 요청 처리 ============
 self.addEventListener('fetch', event => {
   const req = event.request;
-
-  // GET이 아닌 요청은 무시
   if (req.method !== 'GET') return;
 
-  // 같은 출처 요청만 캐시 (외부 폰트/CDN은 브라우저 캐시에 맡김)
   const url = new URL(req.url);
-  if (url.origin !== location.origin) return;
+  if (url.origin !== location.origin) return;  // 외부(폰트/CDN)는 건드리지 않음
 
-  // HTML 요청 → Network-first (새 코드 우선)
-  if (req.mode === 'navigate' || req.headers.get('accept')?.includes('text/html')) {
+  const isNavigation = req.mode === 'navigate' ||
+    (req.headers.get('accept') || '').includes('text/html');
+
+  // ★ HTML 문서(페이지 이동): 항상 네트워크 우선, 캐시에 저장하지도 않음.
+  //   온라인이면 서버가 준 페이지(랜딩이든 앱이든)를 그대로 보여줌.
+  //   오프라인일 때만, 요청 경로에 맞는 페이지로만 폴백.
+  if (isNavigation) {
     event.respondWith(
-      fetch(req)
-        .then(res => {
-          // 받아온 HTML을 캐시에 저장 (오프라인 대비)
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
-          return res;
-        })
-        .catch(() => caches.match(req).then(cached => cached || caches.match('./index.html')))
+      fetch(req).catch(() => {
+        // 오프라인 폴백: 경로에 맞춰 분기 (루트/landing → landing, 그 외 → index)
+        const p = url.pathname;
+        const wantLanding = (p === '/' || p.endsWith('/landing.html') || p.endsWith('/landing'));
+        return caches.match(wantLanding ? './landing.html' : './index.html')
+          .then(c => c || fetch(req));
+      })
     );
     return;
   }
 
-  // 그 외(JS/CSS/이미지) → Cache-first (빠른 로딩)
+  // 정적 자원: 캐시 우선 + 백그라운드 갱신
   event.respondWith(
     caches.match(req).then(cached => {
-      if (cached) {
-        // 백그라운드에서 새 버전도 받아옴 (다음 접속 시 신선한 자원 사용)
-        fetch(req).then(res => {
-          if (res.ok) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
-          }
-        }).catch(() => {/* 오프라인이면 무시 */});
-        return cached;
-      }
-      // 캐시에 없으면 네트워크에서 받고 캐시에 저장
-      return fetch(req).then(res => {
-        if (res.ok) {
+      const fetchAndUpdate = fetch(req).then(res => {
+        if (res && res.ok) {
           const clone = res.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
         }
         return res;
-      });
+      }).catch(() => cached);
+      return cached || fetchAndUpdate;
     })
   );
 });
 
-// ============ 메시지 (수동 캐시 갱신용) ============
+// 수동 즉시 적용 (앱에서 '업데이트' 누를 때)
 self.addEventListener('message', event => {
-  if (event.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
