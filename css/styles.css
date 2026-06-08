@@ -248,6 +248,22 @@ body {
   background: var(--surface); border-bottom: 1px solid var(--border);
   position: relative; z-index: 10;
 }
+#home-screen .stats-row { display: flex; gap: 8px; margin-left: auto; align-items: center; flex-wrap: nowrap; }
+
+/* 좁은 화면(폰): 칩 간격·크기 축소, 줄바꿈 방지 */
+@media (max-width: 560px) {
+  #home-screen .home-top { gap: 6px; padding: 10px 12px; }
+  #home-screen .stats-row { gap: 5px; }
+  #home-screen .stats-row .stat-chip { padding: 6px 10px; font-size: 13px; gap: 4px; }
+  #home-screen .stats-row .stat-chip .icon { font-size: 16px; }
+  #home-screen .stats-row .theme-toggle,
+  #home-screen .stats-row .parent-btn-inline { width: 36px; height: 36px; }
+  #home-screen .stats-row .theme-toggle .icon,
+  #home-screen .stats-row .parent-btn-inline .icon { font-size: 19px; }
+  .player-card { padding: 5px 10px 5px 5px; gap: 7px; }
+  .player-card .avatar-mini { width: 32px; height: 32px; font-size: 14px; }
+  .player-card .name { font-size: 13px; }
+}
 .player-card {
   display: flex; align-items: center; gap: 10px;
   background: var(--surface-2); padding: 6px 14px 6px 6px;
@@ -264,7 +280,6 @@ body {
   font-size: 11px; color: #fff; background: var(--accent-purple);
   padding: 1px 8px; border-radius: var(--r-pill); width: fit-content; font-weight: 700;
 }
-#home-screen .stats-row { display: flex; gap: 8px; margin-left: auto; align-items: center; flex-wrap: wrap; }
 
 #home-screen .world { flex: 1; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .world-canvas { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; }
@@ -423,6 +438,19 @@ body {
   width: 38%; min-width: 300px; padding: 20px;
   display: flex; flex-direction: column; gap: 14px; overflow-y: auto;
   border-right: 1px solid var(--border); background: var(--surface);
+}
+
+/* 폰 세로: 문제(위) / 캔버스(아래) 세로 분할 */
+@media (max-width: 760px) and (orientation: portrait) {
+  .problem-body { flex-direction: column; }
+  .problem-panel {
+    width: 100%; min-width: 0;
+    border-right: none; border-bottom: 1px solid var(--border);
+    max-height: 38%; padding: 14px 16px; gap: 10px;
+  }
+  .problem-panel .problem-text { font-size: 16px; }
+  .problem-panel .problem-equation { font-size: 22px; padding: 12px; }
+  .canvas-area { flex: 1; min-height: 0; }
 }
 .problem-tags-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .problem-tag {

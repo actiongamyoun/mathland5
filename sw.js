@@ -5,11 +5,13 @@
 //   루트(/)=랜딩, /index.html=앱 을 SW가 절대 서로 덮어쓰지 않게 함.
 //   (이전 버전이 루트를 캐시된 index.html로 바꿔버리던 문제 해결)
 
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const CACHE_NAME = `mathland5-${CACHE_VERSION}`;
 
 // 정적 자원만 미리 캐시 (HTML 문서는 프리캐시하지 않음 → navigate는 항상 네트워크)
 const PRECACHE_ASSETS = [
+  './index.html',
+  './app.html',
   './manifest.json',
   './css/styles.css',
   './js/theme.js',
@@ -75,8 +77,8 @@ self.addEventListener('fetch', event => {
       fetch(req).catch(() => {
         // 오프라인 폴백: 경로에 맞춰 분기 (루트/landing → landing, 그 외 → index)
         const p = url.pathname;
-        const wantLanding = (p === '/' || p.endsWith('/landing.html') || p.endsWith('/landing'));
-        return caches.match(wantLanding ? './landing.html' : './index.html')
+        const wantApp = (p.endsWith('/app.html') || p.endsWith('/app'));
+        return caches.match(wantApp ? './app.html' : './index.html')
           .then(c => c || fetch(req));
       })
     );

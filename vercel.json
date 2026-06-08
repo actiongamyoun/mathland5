@@ -2,9 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [
-    { "source": "/", "destination": "/landing.html" }
-  ],
   "headers": [
     {
       "source": "/sw.js",
@@ -21,7 +18,7 @@
       ]
     },
     {
-      "source": "/(index|landing).html",
+      "source": "/(index|app|landing).html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]
