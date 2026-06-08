@@ -1,13 +1,13 @@
 {
   "name": "MATHLAND 5",
   "short_name": "MATHLAND 5",
-  "description": "초등 5학년 수학 학습 앱 - 펜 필기 기반 자기주도 학습",
-  "start_url": "./",
+  "description": "가르치지 않아요. 스스로 푸는 힘을 키워요 - 초등 학습 코칭 앱",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#1a7aff",
-  "theme_color": "#1a7aff",
+  "background_color": "#f3f5fa",
+  "theme_color": "#1cb0f6",
   "lang": "ko",
   "icons": [
     {

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>MATHLAND 5 — 가르치지 않아요, 스스로 푸는 힘을 키워요</title>
+<meta name="description" content="정답을 알려주지 않습니다. 스스로 생각하고, 자신의 학습을 설계하는 힘을 키우는 초등 학습 코칭 앱." />
+<meta name="theme-color" content="#1cb0f6" />
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+<style>
+:root {
+  --brand: #1cb0f6; --brand-deep: #0a8ed4;
+  --green: #58cc02; --orange: #ff9600; --pink: #ff4b81; --purple: #a560f0;
+  --ink: #1a1d29; --ink-soft: #5a6178; --ink-faint: #9aa1b5;
+  --bg: #ffffff; --bg-soft: #f3f6fc; --bg-tint: #eaf4ff;
+  --border: #e8ebf3;
+  --font: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font); color: var(--ink); background: var(--bg);
+  line-height: 1.6; overflow-x: hidden; font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+}
+.icon { font-family: 'Material Icons Round'; font-style: normal; vertical-align: middle; line-height: 1; }
+a { text-decoration: none; color: inherit; }
+
+/* 버튼 */
+.btn {
+  display: inline-flex; align-items: center; gap: 9px; justify-content: center;
+  font-family: var(--font); font-weight: 800; font-size: 18px;
+  padding: 16px 32px; border-radius: 18px; border: none; cursor: pointer;
+  color: #fff; background: var(--brand);
+  box-shadow: 0 5px 0 var(--brand-deep);
+  transition: transform 0.12s, box-shadow 0.12s; letter-spacing: -0.3px;
+}
+.btn:active { transform: translateY(5px); box-shadow: 0 0 0 transparent; }
+.btn.big { font-size: 20px; padding: 18px 40px; }
+.btn .icon { font-size: 22px; }
+.btn-ghost {
+  background: #fff; color: var(--brand); border: 2px solid var(--border);
+  box-shadow: 0 5px 0 var(--border);
+}
+
+/* 상단 고정 바 */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px; backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.8); border-bottom: 1px solid transparent;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.nav.scrolled { border-color: var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+.nav .logo { display: flex; align-items: center; gap: 9px; font-weight: 900; font-size: 20px; letter-spacing: -0.5px; }
+.nav .logo .mark {
+  width: 34px; height: 34px; border-radius: 10px; background: var(--brand);
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px;
+  box-shadow: 0 3px 0 var(--brand-deep);
+}
+.nav .logo .acc { color: var(--brand); }
+.nav .nav-cta {
+  font-weight: 800; font-size: 15px; padding: 10px 20px; border-radius: 12px;
+  background: var(--brand); color: #fff; box-shadow: 0 3px 0 var(--brand-deep);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.nav .nav-cta:active { transform: translateY(3px); box-shadow: 0 0 0 transparent; }
+
+/* 공통 섹션 */
+section { padding: 90px 24px; position: relative; }
+.wrap { max-width: 1080px; margin: 0 auto; }
+.eyebrow {
+  display: inline-block; font-size: 14px; font-weight: 800; letter-spacing: 1px;
+  color: var(--brand); background: var(--bg-tint); padding: 7px 16px; border-radius: 999px;
+  margin-bottom: 20px;
+}
+.section-title { font-size: clamp(28px, 5vw, 42px); font-weight: 900; letter-spacing: -1px; line-height: 1.25; }
+.section-sub { font-size: clamp(16px, 2.5vw, 19px); color: var(--ink-soft); margin-top: 16px; font-weight: 500; }
+
+/* 등장 애니메이션 */
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1); }
+.reveal.in { opacity: 1; transform: translateY(0); }
+
+/* ===== 1. 히어로 ===== */
+.hero {
+  min-height: 100vh; min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 120px 24px 80px;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, var(--bg-tint), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, #fff4e6, transparent 60%),
+    var(--bg);
+  position: relative; overflow: hidden;
+}
+/* 떠다니는 배경 도형 */
+.hero .float {
+  position: absolute; border-radius: 30%; opacity: 0.12; filter: blur(2px);
+  animation: floaty 8s ease-in-out infinite;
+}
+.hero .float.f1 { width: 120px; height: 120px; background: var(--brand); top: 15%; left: 8%; animation-delay: 0s; }
+.hero .float.f2 { width: 90px; height: 90px; background: var(--orange); top: 25%; right: 12%; animation-delay: 1.5s; }
+.hero .float.f3 { width: 70px; height: 70px; background: var(--green); bottom: 20%; left: 18%; animation-delay: 3s; }
+.hero .float.f4 { width: 100px; height: 100px; background: var(--pink); bottom: 25%; right: 16%; animation-delay: 2s; }
+@keyframes floaty { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-24px) rotate(15deg); } }
+
+.hero-mascot { margin-bottom: 28px; animation: bob 3s ease-in-out infinite; position: relative; z-index: 2; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.hero h1 {
+  font-size: clamp(38px, 8vw, 68px); font-weight: 900; letter-spacing: -2px; line-height: 1.1;
+  position: relative; z-index: 2;
+}
+.hero h1 .hl { color: var(--brand); position: relative; }
+.hero .hero-tag {
+  font-size: clamp(17px, 3vw, 23px); color: var(--ink-soft); font-weight: 600;
+  margin-top: 22px; position: relative; z-index: 2;
+}
+.hero .hero-sub { font-size: clamp(14px,2vw,16px); color: var(--ink-faint); margin-top: 10px; position: relative; z-index: 2; }
+.hero .hero-btns { margin-top: 40px; display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 2; }
+.scroll-hint {
+  position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+  color: var(--ink-faint); font-size: 13px; font-weight: 600;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  animation: bounce 2s infinite;
+}
+@keyframes bounce { 0%,100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 8px); } }
+
+/* ===== 2. 공감 ===== */
+.empathy { background: var(--ink); color: #fff; text-align: center; }
+.empathy .section-title { color: #fff; }
+.empathy .quote {
+  font-size: clamp(22px, 4vw, 34px); font-weight: 800; line-height: 1.5; letter-spacing: -0.5px;
+  max-width: 760px; margin: 0 auto;
+}
+.empathy .quote .dim { color: #6b7591; }
+.empathy .quote .hl { color: #5ec8ff; }
+.empathy .empathy-sub { color: #a8b2cc; font-size: 18px; margin-top: 28px; font-weight: 500; }
+
+/* ===== 3. 핵심 가치 ===== */
+.values { background: var(--bg-soft); }
+.values .head { text-align: center; margin-bottom: 56px; }
+.value-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; }
+.value-card {
+  background: #fff; border: 2px solid var(--border); border-bottom-width: 5px;
+  border-radius: 24px; padding: 34px 28px;
+}
+.value-card .vi {
+  width: 64px; height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
+  color: #fff; margin-bottom: 20px;
+}
+.value-card .vi .icon { font-size: 34px; }
+.value-card h3 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+.value-card p { color: var(--ink-soft); font-size: 15px; line-height: 1.65; }
+.value-card .tag-mini { display: inline-block; margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--brand); background: var(--bg-tint); padding: 5px 12px; border-radius: 999px; }
+
+/* ===== 4. 학습 흐름 + AI 코칭 ===== */
+.flow { background: #fff; }
+.flow .head { text-align: center; margin-bottom: 56px; }
+.flow-steps { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; align-items: stretch; max-width: 920px; margin: 0 auto; }
+.flow-step {
+  flex: 1; min-width: 150px; background: var(--bg-soft); border: 2px solid var(--border);
+  border-radius: 20px; padding: 24px 18px; text-align: center; position: relative;
+}
+.flow-step .num { font-size: 13px; font-weight: 800; color: var(--ink-faint); }
+.flow-step .si {
+  width: 52px; height: 52px; border-radius: 15px; display: flex; align-items: center; justify-content: center;
+  color: #fff; margin: 10px auto 14px;
+}
+.flow-step .si .icon { font-size: 28px; }
+.flow-step h4 { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+.flow-step p { font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+
+/* AI 코칭 박스 */
+.coach-box {
+  margin-top: 64px; background: linear-gradient(135deg, var(--brand), #4a8fff);
+  border-radius: 28px; padding: 48px 40px; color: #fff;
+  display: flex; align-items: center; gap: 36px; flex-wrap: wrap; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.coach-box .coach-mascot { flex-shrink: 0; background: rgba(255,255,255,0.18); border-radius: 50%; padding: 12px; }
+.coach-box .coach-text { flex: 1; min-width: 260px; }
+.coach-box .eyebrow { background: rgba(255,255,255,0.2); color: #fff; }
+.coach-box h3 { font-size: clamp(24px, 4vw, 32px); font-weight: 900; letter-spacing: -0.5px; line-height: 1.3; }
+.coach-box p { font-size: 17px; margin-top: 16px; opacity: 0.95; line-height: 1.6; }
+.coach-bubbles { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+.coach-bubble {
+  background: rgba(255,255,255,0.18); border-radius: 14px 14px 14px 4px; padding: 12px 18px;
+  font-size: 15px; font-weight: 600; width: fit-content; max-width: 100%;
+}
+
+/* ===== 5. 마무리 CTA ===== */
+.final {
+  text-align: center;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 100%, var(--bg-tint), transparent 70%),
+    var(--bg);
+}
+.final .final-mascot { margin-bottom: 24px; }
+.final h2 { font-size: clamp(30px, 6vw, 48px); font-weight: 900; letter-spacing: -1.5px; line-height: 1.2; }
+.final p { font-size: 18px; color: var(--ink-soft); margin-top: 18px; font-weight: 500; }
+.final .btn { margin-top: 36px; }
+.final .free-note { margin-top: 18px; font-size: 14px; color: var(--ink-faint); font-weight: 600; }
+
+/* 푸터 */
+footer { padding: 40px 24px; text-align: center; color: var(--ink-faint); font-size: 13px; border-top: 1px solid var(--border); }
+footer .foot-logo { font-weight: 800; color: var(--ink-soft); margin-bottom: 8px; }
+
+@media (max-width: 640px) {
+  section { padding: 64px 20px; }
+  .coach-box { padding: 32px 24px; }
+  .flow-step { min-width: 130px; }
+}
+</style>
+</head>
+<body>
+
+<!-- 상단 바 -->
+<nav class="nav" id="nav">
+  <a href="#" class="logo"><span class="mark">M</span>MATHLAND<span class="acc">5</span></a>
+  <a href="index.html" class="nav-cta">시작하기</a>
+</nav>
+
+<!-- 1. 히어로 -->
+<section class="hero">
+  <div class="float f1"></div><div class="float f2"></div>
+  <div class="float f3"></div><div class="float f4"></div>
+
+  <div class="hero-mascot" id="hero-mascot"></div>
+  <h1>가르치지 않아요.<br><span class="hl">스스로 푸는 힘</span>을 키워요.</h1>
+  <p class="hero-tag">정답을 알려주는 대신, 스스로 생각하는 힘을 길러주는 학습 코칭</p>
+  <p class="hero-sub">초등 5·6학년 · 수학부터 시작해요</p>
+  <div class="hero-btns">
+    <a href="index.html" class="btn big"><i class="icon">play_arrow</i> 무료로 시작하기</a>
+    <a href="#values" class="btn-ghost btn big"><i class="icon">expand_more</i> 더 알아보기</a>
+  </div>
+
+  <div class="scroll-hint">
+    <span>아래로 스크롤</span>
+    <i class="icon">keyboard_arrow_down</i>
+  </div>
+</section>
+
+<!-- 2. 공감 -->
+<section class="empathy">
+  <div class="wrap">
+    <p class="quote reveal">
+      혹시 우리 아이가<br>
+      <span class="dim">답은 맞히는데,</span> <span class="hl">왜 그런지는 모르고</span> 있진 않나요?
+    </p>
+    <p class="empathy-sub reveal">
+      정답을 빨리 찾는 것보다 중요한 건,<br>스스로 생각하고 자기 힘으로 풀어내는 경험이에요.
+    </p>
+  </div>
+</section>
+
+<!-- 3. 핵심 가치 -->
+<section class="values" id="values">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">왜 다를까요</span>
+      <h2 class="section-title">티칭이 아니라, 코칭입니다</h2>
+      <p class="section-sub">아이가 스스로 학습의 주인이 되도록 옆에서 돕습니다</p>
+    </div>
+    <div class="value-grid">
+      <div class="value-card reveal">
+        <div class="vi" style="background: var(--brand);"><i class="icon">psychology</i></div>
+        <h3>스스로 푼다</h3>
+        <p>정답을 바로 보여주지 않아요. 펜으로 직접 풀이를 쓰며 끝까지 생각하는 힘을 기릅니다. 막히면 답이 아니라 힌트로 도와요.</p>
+        <span class="tag-mini">정답 비공개 · 펜 풀이</span>
+      </div>
+      <div class="value-card reveal">
+        <div class="vi" style="background: var(--purple);"><i class="icon">lightbulb</i></div>
+        <h3>내가 뭘 아는지 안다</h3>
+        <p>문제를 풀 때마다 "확실해 / 헷갈려 / 찍었어"를 스스로 표시해요. 자신의 이해도를 정확히 아는 메타인지를 키웁니다.</p>
+        <span class="tag-mini">자신감 체크 · 메타인지</span>
+      </div>
+      <div class="value-card reveal">
+        <div class="vi" style="background: var(--green);"><i class="icon">explore</i></div>
+        <h3>학습을 설계한다</h3>
+        <p>오늘 무엇을, 얼마나 공부할지 아이가 직접 정해요. 자신의 약한 곳을 보고 스스로 학습 계획을 세우는 자기주도 학습.</p>
+        <span class="tag-mini">자기주도 · 스스로 선택</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. 학습 흐름 + AI 코칭 -->
+<section class="flow">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">학습 흐름</span>
+      <h2 class="section-title">풀고, 돌아보고, 다시 도전해요</h2>
+      <p class="section-sub">한 번 풀고 끝이 아니라, 생각하고 성찰하는 한 사이클</p>
+    </div>
+
+    <div class="flow-steps">
+      <div class="flow-step reveal">
+        <div class="num">STEP 1</div>
+        <div class="si" style="background: var(--brand);"><i class="icon">edit</i></div>
+        <h4>스스로 풀기</h4>
+        <p>펜으로 직접 풀이를 써요</p>
+      </div>
+      <div class="flow-step reveal">
+        <div class="num">STEP 2</div>
+        <div class="si" style="background: var(--purple);"><i class="icon">touch_app</i></div>
+        <h4>자신감 체크</h4>
+        <p>얼마나 아는지 표시해요</p>
+      </div>
+      <div class="flow-step reveal">
+        <div class="num">STEP 3</div>
+        <div class="si" style="background: var(--orange);"><i class="icon">fact_check</i></div>
+        <h4>결과 확인</h4>
+        <p>한눈에 나의 결과를 봐요</p>
+      </div>
+      <div class="flow-step reveal">
+        <div class="num">STEP 4</div>
+        <div class="si" style="background: var(--pink);"><i class="icon">edit_note</i></div>
+        <h4>오답노트</h4>
+        <p>틀린 문제 다시 도전</p>
+      </div>
+      <div class="flow-step reveal">
+        <div class="num">STEP 5</div>
+        <div class="si" style="background: var(--green);"><i class="icon">menu_book</i></div>
+        <h4>회고</h4>
+        <p>오늘 배운 걸 돌아봐요</p>
+      </div>
+    </div>
+
+    <!-- AI 코칭 -->
+    <div class="coach-box reveal">
+      <div class="coach-mascot" id="coach-mascot"></div>
+      <div class="coach-text">
+        <span class="eyebrow">AI 학습 코치</span>
+        <h3>마리가 옆에서 코칭해요</h3>
+        <p>가르치는 선생님이 아니라, 함께 고민하는 코치예요. 계획을 세울 때, 막혔을 때, 한 주를 돌아볼 때 — 마리가 말을 건네요.</p>
+        <div class="coach-bubbles">
+          <div class="coach-bubble">"이번 주는 분수에 집중해볼까?"</div>
+          <div class="coach-bubble">"여기서 자주 막히네, 잠깐 쉬어갈까?"</div>
+          <div class="coach-bubble">"이번 주 목표의 80%를 해냈어! 멋져 ✨"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. 마무리 CTA -->
+<section class="final">
+  <div class="wrap">
+    <div class="final-mascot reveal" id="final-mascot"></div>
+    <h2 class="reveal">오늘부터, 스스로 공부하는 힘</h2>
+    <p class="reveal">매일 조금씩. 아이가 학습의 주인이 되는 첫걸음을 함께해요.</p>
+    <div class="reveal"><a href="index.html" class="btn big"><i class="icon">play_arrow</i> 지금 시작하기</a></div>
+    <p class="free-note reveal">설치 없이 바로 시작 · 무료</p>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-logo">MATHLAND 5</div>
+  가르치지 않아요. 스스로 푸는 힘을 키워요.
+</footer>
+
+<script src="js/mascot.js"></script>
+<script>
+// 마스코트 주입
+function setMascot(elId, mood, size) {
+  var el = document.getElementById(elId);
+  if (el && window.mascotSVG) el.innerHTML = window.mascotSVG(mood, size);
+}
+setMascot('hero-mascot', 'hello', 160);
+setMascot('coach-mascot', 'wink', 110);
+setMascot('final-mascot', 'cheer', 130);
+
+// 스크롤 시 nav 그림자
+var nav = document.getElementById('nav');
+window.addEventListener('scroll', function() {
+  if (window.scrollY > 20) nav.classList.add('scrolled');
+  else nav.classList.remove('scrolled');
+});
+
+// reveal 등장 애니메이션
+var io = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(function(el, i) {
+  // 같은 그룹 내 순차 등장
+  el.style.transitionDelay = (i % 3 * 0.08) + 's';
+  io.observe(el);
+});
+</script>
+</body>
+</html>
