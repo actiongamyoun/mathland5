@@ -14,6 +14,12 @@ const initialState = {
   totalSolved: 0,
   diagnosticDone: false,
 
+  // 아이 정보 (온보딩에서 설정)
+  childName: '',           // 아이 이름
+  onboarded: false,        // 온보딩 완료 여부
+  streak: 0,               // 연속 학습일
+  lastStudyDate: '',       // 마지막 학습한 날 (YYYY-MM-DD)
+
   // 현재 선택된 학습 컨텍스트 (자기주도 학습)
   currentSubject: 'math',
   currentGrade: 5,
@@ -132,6 +138,30 @@ window.isStruggling = function(unitId) {
   const s = (st.unitStruggle || {})[unitId];
   if (!s || s.attempts < 4) return false; // 최소 4번은 해봐야
   return (s.wrong / s.attempts) >= 0.6; // 60% 이상 틀림
+};
+
+// 오늘 학습 기록 → 연속일(streak) 갱신
+window.updateStreak = function() {
+  const st = window.MATHLAND_STATE;
+  const today = window.getWeekStart ? (() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+  })() : new Date().toISOString().slice(0,10);
+
+  if (st.lastStudyDate === today) return; // 오늘 이미 기록됨
+
+  // 어제 날짜
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  const yesterday = `${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,'0')}-${String(y.getDate()).padStart(2,'0')}`;
+
+  if (st.lastStudyDate === yesterday) {
+    st.streak = (st.streak || 0) + 1; // 연속
+  } else {
+    st.streak = 1; // 끊김 → 1부터
+  }
+  st.lastStudyDate = today;
+  window.saveState();
 };
 
 console.log('[MATHLAND] state 로드 완료');

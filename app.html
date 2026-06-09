@@ -38,8 +38,35 @@
 
 <div id="app">
 
+  <!-- 온보딩 (첫 실행: 이름 + 학년) -->
+  <div class="screen" id="onboarding-screen">
+    <div class="onboard-wrap">
+      <div class="onboard-mascot" id="onboard-mascot"></div>
+      <div class="onboard-bubble" id="onboard-bubble">안녕! 난 마리야 🍊<br>너랑 같이 공부할 거야!</div>
+
+      <div class="onboard-step" id="onboard-step-name">
+        <label class="onboard-label">네 이름이 뭐야?</label>
+        <input type="text" id="onboard-name-input" class="onboard-input" placeholder="이름을 입력해줘" maxlength="10" autocomplete="off" />
+        <button class="btn btn-blue btn-mega onboard-next" data-action="onboard-to-grade">
+          다음 <i class="icon">arrow_forward</i>
+        </button>
+      </div>
+
+      <div class="onboard-step" id="onboard-step-grade" style="display:none;">
+        <label class="onboard-label"><span id="onboard-name-echo">친구</span>야, 몇 학년이야?</label>
+        <div class="onboard-grade-btns">
+          <button class="onboard-grade-btn" data-grade="5">5학년</button>
+          <button class="onboard-grade-btn" data-grade="6">6학년</button>
+        </div>
+        <button class="btn btn-blue btn-mega onboard-next" id="onboard-finish-btn" data-action="onboard-finish" disabled>
+          시작하기! <i class="icon">rocket_launch</i>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- 0. 시작 화면 -->
-  <div class="screen active" id="start-screen">
+  <div class="screen" id="start-screen">
     <button class="theme-toggle" data-action="toggle-theme" title="테마 전환">
       <i class="icon">dark_mode</i>
     </button>
@@ -68,9 +95,9 @@
   <div class="screen" id="home-screen">
     <div class="home-top">
       <div class="player-card">
-        <div class="avatar-mini">M</div>
+        <div class="avatar-mini" id="home-avatar">M</div>
         <div class="info">
-          <div class="name">우리 친구</div>
+          <div class="name" id="home-player-name">우리 친구</div>
           <div class="level">LV.<span id="player-level">1</span></div>
         </div>
       </div>
@@ -86,25 +113,37 @@
       </div>
     </div>
 
-    <div class="world">
-      <div class="world-canvas">
+    <div class="home-main">
+      <!-- 마리 + 인사 -->
+      <div class="home-hello">
         <div class="mascot bob" id="home-mascot"></div>
-        <div id="home-greeting" style="text-align:center;">
-          <div style="font-size:22px; font-weight:800; letter-spacing:-0.5px;" id="greeting-title">안녕! 오늘도 같이 공부할까?</div>
-          <div style="font-size:15px; color:var(--text-soft); font-weight:600; margin-top:6px;" id="greeting-sub">아래 버튼을 눌러 시작해봐</div>
+        <div class="home-greeting">
+          <div class="greeting-title" id="greeting-title">안녕! 오늘도 같이 공부할까?</div>
+          <div class="greeting-sub" id="greeting-sub">아래 버튼을 눌러 시작해봐</div>
         </div>
       </div>
+
+      <!-- 미니 통계 카드 2개 -->
+      <div class="home-stats">
+        <div class="home-stat-card streak">
+          <div class="hs-icon"><i class="icon">local_fire_department</i></div>
+          <div class="hs-num"><span id="home-streak">0</span><span class="hs-unit">일</span></div>
+          <div class="hs-label">연속 학습</div>
+        </div>
+        <div class="home-stat-card today">
+          <div class="hs-icon"><i class="icon">stars</i></div>
+          <div class="hs-num"><span id="home-today-solved">0</span><span class="hs-unit">문제</span></div>
+          <div class="hs-label">오늘 푼 문제</div>
+        </div>
+      </div>
+
+      <!-- 이번 주 계획 요약 (있을 때만) -->
+      <div id="home-plan-summary"></div>
     </div>
 
     <div class="home-bottom">
-      <div class="mission-card">
-        <div class="label">오늘의 미션</div>
-        <div class="text" id="mission-text">문제 0/5 풀기</div>
-        <div class="progress"><div class="progress-bar" id="mission-bar" style="width: 0%"></div></div>
-      </div>
-      <button class="btn btn-blue btn-big" data-action="study" style="min-width: 170px;">
-        <i class="icon">play_arrow</i>
-        공부하러!
+      <button class="btn btn-blue home-study-btn" data-action="study">
+        <i class="icon">play_arrow</i> 공부하러 가기
       </button>
     </div>
   </div>
@@ -305,6 +344,25 @@
       <button class="btn btn-red" style="padding: 8px 14px; font-size: 13px;" data-action="reset"><i class="icon">refresh</i> 초기화</button>
     </div>
     <div class="dash-content">
+      <!-- 아이 정보 설정 -->
+      <div class="dash-section" style="margin-bottom: 16px;">
+        <h3 class="dash-section-title"><i class="icon">person</i> 아이 정보</h3>
+        <div class="child-info-row">
+          <label>이름</label>
+          <input type="text" id="parent-child-name" class="child-info-input" maxlength="10" placeholder="이름" />
+        </div>
+        <div class="child-info-row">
+          <label>학년</label>
+          <div class="child-grade-btns">
+            <button class="child-grade-btn" data-pgrade="5">5학년</button>
+            <button class="child-grade-btn" data-pgrade="6">6학년</button>
+          </div>
+        </div>
+        <button class="btn btn-blue" style="width:100%; margin-top:10px;" data-action="save-child-info">
+          <i class="icon">save</i> 저장
+        </button>
+      </div>
+
       <div class="dash-grid">
         <div class="dash-card c1">
           <span class="label">TODAY</span>

@@ -38,6 +38,14 @@ window.resetPin = function() {
 window.refreshParent = function() {
   const state = window.MATHLAND_STATE;
 
+  // 아이 정보 입력칸 채우기
+  const nameInput = document.getElementById('parent-child-name');
+  if (nameInput) nameInput.value = state.childName || '';
+  window._parentGrade = state.currentGrade || 5;
+  document.querySelectorAll('.child-grade-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.pgrade) === (state.currentGrade || 5));
+  });
+
   document.getElementById('dash-today').textContent = state.todaySolved + '개';
   document.getElementById('dash-rate').textContent =
     state.todaySolved > 0 ? Math.round(state.todayCorrect/state.todaySolved*100) + '%' : '-';

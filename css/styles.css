@@ -442,15 +442,24 @@ body {
 
 /* 폰 세로: 문제(위) / 캔버스(아래) 세로 분할 */
 @media (max-width: 760px) and (orientation: portrait) {
-  .problem-body { flex-direction: column; }
+  .problem-body { flex-direction: column; min-height: 0; }
   .problem-panel {
-    width: 100%; min-width: 0;
-    border-right: none; border-bottom: 1px solid var(--border);
-    max-height: 38%; padding: 14px 16px; gap: 10px;
+    width: 100%; min-width: 0; flex-shrink: 0;
+    border-right: none; border-bottom: 2px solid var(--border);
+    max-height: 34vh; padding: 14px 16px; gap: 8px;
   }
-  .problem-panel .problem-text { font-size: 16px; }
-  .problem-panel .problem-equation { font-size: 22px; padding: 12px; }
-  .canvas-area { flex: 1; min-height: 0; }
+  .problem-panel .problem-text { font-size: 15px; line-height: 1.4; }
+  .problem-panel .problem-equation { font-size: 20px; padding: 10px; }
+  /* 캔버스 영역: 남은 공간 전부 + 최소 높이 보장 */
+  .canvas-area { flex: 1 1 auto; min-height: 320px; }
+  .canvas-wrap { flex: 1 1 auto; min-height: 0; }
+  /* 툴바가 좁은 화면에서 줄바꿈 안 되게 */
+  .canvas-toolbar { gap: 5px; padding: 0 10px; overflow-x: auto; }
+  .canvas-helper { display: none; }  /* 좁으면 헬퍼 텍스트 숨김 */
+  .tool-btn { width: 40px; height: 40px; flex-shrink: 0; }
+  .stroke-dot { width: 34px; height: 34px; flex-shrink: 0; }
+  /* 제출 버튼이 캔버스 위에 떠서 안 잘리게 */
+  .submit-bar { bottom: 14px; right: 12px; left: 12px; justify-content: flex-end; }
 }
 .problem-tags-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .problem-tag {
@@ -482,7 +491,7 @@ body {
 @keyframes slide-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
 /* 캔버스 */
-.canvas-area { flex: 1; position: relative; background: var(--surface); display: flex; flex-direction: column; }
+.canvas-area { flex: 1; min-height: 0; position: relative; background: var(--surface); display: flex; flex-direction: column; }
 .canvas-toolbar {
   height: 60px; min-height: 60px; display: flex; align-items: center; padding: 0 14px; gap: 8px;
   background: var(--surface); border-bottom: 1px solid var(--border);
@@ -821,3 +830,99 @@ body {
   padding: 0 18px;
 }
 .dash-collapse.open .dash-collapse-body { max-height: 300px; padding: 0 18px 18px; }
+
+/* ============ 20. 온보딩 ============ */
+#onboarding-screen { align-items: center; justify-content: center; padding: 24px; }
+.onboard-wrap { width: 100%; max-width: 380px; text-align: center; }
+.onboard-mascot { display: flex; justify-content: center; margin-bottom: 16px; }
+.onboard-bubble {
+  background: var(--brand-soft); border-radius: 18px; padding: 16px 20px;
+  font-size: 17px; font-weight: 700; line-height: 1.5; color: var(--text);
+  margin-bottom: 28px; position: relative;
+}
+.onboard-bubble::after {
+  content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  border-left: 10px solid transparent; border-right: 10px solid transparent;
+  border-bottom: 10px solid var(--brand-soft);
+}
+.onboard-label { display: block; font-size: 17px; font-weight: 800; margin-bottom: 14px; color: var(--text); }
+.onboard-input {
+  width: 100%; font-family: inherit; font-size: 20px; font-weight: 700; text-align: center;
+  padding: 16px; border: 2px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface); color: var(--text); margin-bottom: 20px;
+  outline: none; transition: border-color 0.15s;
+}
+.onboard-input:focus { border-color: var(--brand); }
+.onboard-grade-btns { display: flex; gap: 12px; margin-bottom: 20px; }
+.onboard-grade-btn {
+  flex: 1; font-family: inherit; font-size: 18px; font-weight: 800;
+  padding: 20px; border: 2px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface); color: var(--text); cursor: pointer;
+  transition: all 0.15s;
+}
+.onboard-grade-btn.selected { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
+.onboard-next { width: 100%; }
+.onboard-next:disabled { opacity: 0.4; pointer-events: none; }
+
+/* ============ 21. 새 홈 화면 ============ */
+.home-main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 16px; gap: 18px; overflow-y: auto; justify-content: center; }
+.home-hello { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.home-greeting { text-align: center; }
+.greeting-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.3; }
+.greeting-sub { font-size: 15px; color: var(--text-soft); font-weight: 600; margin-top: 6px; }
+
+/* 미니 통계 카드 */
+.home-stats { display: flex; gap: 12px; width: 100%; max-width: 420px; }
+.home-stat-card {
+  flex: 1; background: var(--surface); border: 2px solid var(--border); border-bottom-width: 4px;
+  border-radius: var(--r-lg); padding: 16px; text-align: center;
+}
+.home-stat-card .hs-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; }
+.home-stat-card .hs-icon .icon { font-size: 24px; color: #fff; }
+.home-stat-card.streak .hs-icon { background: var(--accent-orange); }
+.home-stat-card.today .hs-icon { background: var(--accent-purple); }
+.home-stat-card .hs-num { font-size: 26px; font-weight: 900; line-height: 1; }
+.home-stat-card .hs-num .hs-unit { font-size: 14px; font-weight: 700; color: var(--text-soft); margin-left: 2px; }
+.home-stat-card .hs-label { font-size: 12px; color: var(--text-soft); font-weight: 600; margin-top: 6px; }
+
+/* 홈 계획 요약 */
+.home-plan-card {
+  width: 100%; max-width: 420px;
+  background: linear-gradient(135deg, var(--brand), #4a9fff); color: #fff;
+  border-radius: var(--r-lg); padding: 16px 18px; cursor: pointer;
+}
+.home-plan-card .hp-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.home-plan-card .hp-title { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+.home-plan-card .hp-title .icon { font-size: 18px; }
+.home-plan-card .hp-prog { font-size: 15px; font-weight: 900; }
+.home-plan-card .hp-bar-wrap { height: 8px; background: rgba(255,255,255,0.3); border-radius: 999px; overflow: hidden; margin-bottom: 8px; }
+.home-plan-card .hp-bar { height: 100%; background: #fff; border-radius: 999px; }
+.home-plan-card .hp-foot { font-size: 13px; font-weight: 600; opacity: 0.95; display: flex; align-items: center; gap: 4px; }
+
+/* 홈 메인 버튼 */
+.home-bottom { padding: 16px; }
+.home-study-btn { width: 100%; font-size: 19px; padding: 18px; }
+
+/* 폰: 통계 카드 약간 작게 */
+@media (max-width: 560px) {
+  .greeting-title { font-size: 20px; }
+  .home-stat-card { padding: 14px; }
+  .home-stat-card .hs-num { font-size: 22px; }
+}
+
+/* 부모 - 아이 정보 설정 */
+.child-info-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.child-info-row label { font-size: 14px; font-weight: 700; color: var(--text-soft); width: 44px; flex-shrink: 0; }
+.child-info-input {
+  flex: 1; font-family: inherit; font-size: 15px; font-weight: 600;
+  padding: 10px 14px; border: 2px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--text); outline: none;
+}
+.child-info-input:focus { border-color: var(--brand); }
+.child-grade-btns { display: flex; gap: 8px; flex: 1; }
+.child-grade-btn {
+  flex: 1; font-family: inherit; font-size: 14px; font-weight: 700;
+  padding: 10px; border: 2px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--text); cursor: pointer;
+}
+.child-grade-btn.selected { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }

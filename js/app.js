@@ -13,7 +13,10 @@ window.show = function(screenId) {
   if (screenId === 'unit-select-screen') refreshUnitSelect();
   if (screenId === 'parent-screen') window.refreshParent();
   if (screenId === 'problem-screen') {
+    // 레이아웃 확정 후 캔버스 크기 재계산 (모바일에서 한 번에 안 잡힐 수 있어 여러 번 시도)
     requestAnimationFrame(() => requestAnimationFrame(window.resizeCanvas));
+    setTimeout(window.resizeCanvas, 120);
+    setTimeout(window.resizeCanvas, 350);
   }
 };
 
@@ -81,28 +84,60 @@ function refreshHome() {
   document.getElementById('coin-count').textContent = state.coins;
   document.getElementById('gem-count').textContent = state.gems;
 
-  const done = state.todaySolved >= 5;
-  document.getElementById('mission-text').textContent =
-    done ? '오늘의 미션 완료! 🎉' : `문제 ${state.todaySolved}/5 풀기`;
-  document.getElementById('mission-bar').style.width = Math.min(100, state.todaySolved / 5 * 100) + '%';
+  const name = state.childName || '우리 친구';
+  // 상단 이름 + 아바타 (이름 첫 글자)
+  const nameEl = document.getElementById('home-player-name');
+  if (nameEl) nameEl.textContent = name;
+  const avatarEl = document.getElementById('home-avatar');
+  if (avatarEl) avatarEl.textContent = name.charAt(0);
 
-  // 마스코트 표정 + 인사말 (테마 전환 후에도 다시 그림)
+  // 통계 카드
+  const streakEl = document.getElementById('home-streak');
+  if (streakEl) streakEl.textContent = state.streak || 0;
+  const todayEl = document.getElementById('home-today-solved');
+  if (todayEl) todayEl.textContent = state.todaySolved || 0;
+
+  const done = state.todaySolved >= 5;
+
+  // 마스코트 표정 + 인사말 (이름 불러주기!)
   const homeM = document.getElementById('home-mascot');
   const gTitle = document.getElementById('greeting-title');
   const gSub = document.getElementById('greeting-sub');
   if (homeM && window.mascotSVG) {
     if (done) {
       homeM.innerHTML = window.mascotSVG('cheer', 110);
-      if (gTitle) gTitle.textContent = '오늘 목표 달성! 멋져 ✨';
+      if (gTitle) gTitle.textContent = `${name}야, 오늘 목표 달성! ✨`;
       if (gSub) gSub.textContent = '더 풀고 싶으면 언제든 시작해';
     } else if (state.totalSolved === 0) {
       homeM.innerHTML = window.mascotSVG('hello', 110);
-      if (gTitle) gTitle.textContent = '안녕! 나는 마리야';
+      if (gTitle) gTitle.textContent = `${name}야, 안녕! 난 마리야`;
       if (gSub) gSub.textContent = '오늘 같이 공부 시작해볼까?';
     } else {
       homeM.innerHTML = window.mascotSVG('wink', 110);
-      if (gTitle) gTitle.textContent = '다시 왔구나! 반가워';
+      if (gTitle) gTitle.textContent = `${name}야, 다시 왔구나!`;
       if (gSub) gSub.textContent = '오늘도 한 걸음 나아가 보자';
+    }
+  }
+
+  // 이번 주 계획 요약 (있을 때만)
+  const planArea = document.getElementById('home-plan-summary');
+  if (planArea) {
+    const plan = window.getActivePlan ? window.getActivePlan() : null;
+    if (plan) {
+      const done2 = plan.doneSessions || 0;
+      const target = plan.targetSessions || 1;
+      const pct = Math.min(100, Math.round(done2 / target * 100));
+      planArea.innerHTML = `
+        <div class="home-plan-card" data-action="study">
+          <div class="hp-top">
+            <div class="hp-title"><i class="icon">event_available</i> 이번 주 계획</div>
+            <div class="hp-prog">${done2}/${target}</div>
+          </div>
+          <div class="hp-bar-wrap"><div class="hp-bar" style="width:${pct}%"></div></div>
+          <div class="hp-foot">${done2 >= target ? '목표 달성! 🎉' : '이어서 공부하기'} <i class="icon">arrow_forward</i></div>
+        </div>`;
+    } else {
+      planArea.innerHTML = '';
     }
   }
 }
@@ -1213,6 +1248,9 @@ function endSession() {
     }
   }
 
+  // 연속 학습일 갱신 (오늘 공부함)
+  if (window.updateStreak) window.updateStreak();
+
   window.saveState();
 
   // 막힌 단원이 있으면, 결과 화면 본 뒤 마리가 위로 (세션 종료 흐름 방해 안 하게 플래그만)
@@ -1593,6 +1631,28 @@ document.body.addEventListener('click', e => {
     return;
   }
 
+  // 온보딩 학년 선택 버튼
+  const gradeBtn = e.target.closest('.onboard-grade-btn');
+  if (gradeBtn) {
+    e.preventDefault();
+    document.querySelectorAll('.onboard-grade-btn').forEach(b => b.classList.remove('selected'));
+    gradeBtn.classList.add('selected');
+    window._onboardGrade = parseInt(gradeBtn.dataset.grade);
+    const finishBtn = document.getElementById('onboard-finish-btn');
+    if (finishBtn) finishBtn.disabled = false;
+    return;
+  }
+
+  // 부모 화면 학년 선택 버튼
+  const pGradeBtn = e.target.closest('.child-grade-btn');
+  if (pGradeBtn) {
+    e.preventDefault();
+    document.querySelectorAll('.child-grade-btn').forEach(b => b.classList.remove('selected'));
+    pGradeBtn.classList.add('selected');
+    window._parentGrade = parseInt(pGradeBtn.dataset.pgrade);
+    return;
+  }
+
   // 액션
   const target = e.target.closest('[data-action]');
   if (target) {
@@ -1641,6 +1701,36 @@ function handleAction(action, target) {
     case 'toggle-theme':
       if (window.toggleTheme) window.toggleTheme();
       break;
+    case 'onboard-to-grade': {
+      const input = document.getElementById('onboard-name-input');
+      const name = (input.value || '').trim();
+      if (!name) { input.focus(); input.style.borderColor = 'var(--accent-pink)'; return; }
+      window.MATHLAND_STATE.childName = name;
+      document.getElementById('onboard-name-echo').textContent = name;
+      document.getElementById('onboard-step-name').style.display = 'none';
+      document.getElementById('onboard-step-grade').style.display = 'block';
+      document.getElementById('onboard-bubble').innerHTML = `반가워, ${escapeHtml(name)}야! 🎉<br>몇 학년인지 알려줄래?`;
+      break;
+    }
+    case 'onboard-finish': {
+      const st = window.MATHLAND_STATE;
+      st.onboarded = true;
+      st.currentGrade = window._onboardGrade || 5;
+      window.saveState();
+      window.show('home-screen');
+      break;
+    }
+    case 'save-child-info': {
+      const st = window.MATHLAND_STATE;
+      const nameInput = document.getElementById('parent-child-name');
+      const newName = (nameInput.value || '').trim();
+      if (newName) st.childName = newName;
+      if (window._parentGrade) st.currentGrade = window._parentGrade;
+      window.saveState();
+      el.innerHTML = '<i class="icon">check</i> 저장됨!';
+      setTimeout(() => { el.innerHTML = '<i class="icon">save</i> 저장'; }, 1500);
+      break;
+    }
     case 'to-subject-select':
       window.show('subject-select-screen');
       break;
@@ -1840,6 +1930,8 @@ function injectMascots() {
   if (startM) startM.innerHTML = window.mascotSVG('hello', 130);
   const homeM = document.getElementById('home-mascot');
   if (homeM) homeM.innerHTML = window.mascotSVG('hello', 110);
+  const onbM = document.getElementById('onboard-mascot');
+  if (onbM) onbM.innerHTML = window.mascotSVG('hello', 120);
 }
 
 // ============ 초기화 ============
@@ -1848,6 +1940,14 @@ function boot() {
   injectMascots();
   window.initCanvas();
   registerServiceWorker();
+
+  // 온보딩 이름 입력에서 Enter → 다음
+  const onbInput = document.getElementById('onboard-name-input');
+  if (onbInput) {
+    onbInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); handleAction('onboard-to-grade', onbInput); }
+    });
+  }
 
   // 모바일 더블탭 줌 방지 (버튼/카드 위에서는 제외)
   let lastTouch = 0;
@@ -1877,7 +1977,10 @@ function boot() {
   }
 
   const state = window.MATHLAND_STATE;
-  if (state.totalSolved > 0 || state.diagnosticDone) {
+  // 온보딩 안 했으면 온보딩 먼저
+  if (!state.onboarded) {
+    window.show('onboarding-screen');
+  } else if (state.totalSolved > 0 || state.diagnosticDone) {
     window.show('home-screen');
   } else {
     window.show('start-screen');
