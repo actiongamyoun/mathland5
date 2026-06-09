@@ -15,16 +15,21 @@ const FALLBACK = {
   default: ['오늘도 같이 해보자! 화이팅 😊'],
 };
 
-function pickFallback(type) {
+function pickFallback(type, payload) {
+  payload = payload || {};
+  if (type === 'stuck' && payload.easierUnitName) {
+    return `괜찮아, 틀려도 돼! 좀 어려우면 "${payload.easierUnitName}"부터 다시 다져볼까? 천천히 가도 돼 🌱`;
+  }
   const arr = FALLBACK[type] || FALLBACK.default;
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 // 코칭 요청 — Promise<string> 반환 (항상 성공, 실패 시 폴백)
 window.getCoaching = async function(type, payload) {
+  payload = payload || {};
   // 로컬 파일 환경에선 API 없음 → 폴백
   if (location.protocol === 'file:') {
-    return pickFallback(type);
+    return pickFallback(type, payload);
   }
   try {
     const r = await fetch('/api/coach', {
@@ -34,10 +39,10 @@ window.getCoaching = async function(type, payload) {
     });
     if (!r.ok) throw new Error('coach api ' + r.status);
     const data = await r.json();
-    return (data && data.message) ? data.message : pickFallback(type);
+    return (data && data.message) ? data.message : pickFallback(type, payload);
   } catch (e) {
     console.warn('[coach] 폴백 사용:', e.message);
-    return pickFallback(type);
+    return pickFallback(type, payload);
   }
 };
 

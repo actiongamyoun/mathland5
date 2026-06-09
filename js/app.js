@@ -41,7 +41,8 @@ function refreshSubjectSelect() {
       card.addEventListener('click', () => {
         window.MATHLAND_STATE.currentSubject = subj.id;
         window.saveState();
-        window.show('grade-select-screen');
+        // 학년은 온보딩/부모설정에서 정한 값(currentGrade)을 그대로 사용 → 바로 대시보드
+        window.show('unit-select-screen');
       });
     }
     grid.appendChild(card);
@@ -377,19 +378,39 @@ window.confirmPlan = async function() {
 };
 
 // 코칭 말풍선 표시 (마리 + 멘트)
-function showCoachMessage(message, mood) {
+function showCoachMessage(message, mood, easierUnit) {
   const modal = document.getElementById('coach-modal');
   const content = document.getElementById('coach-modal-content');
+
+  // 쉬운 단원 추천이 있으면 "그 단원 해보기" 버튼 추가
+  let easierBtn = '';
+  if (easierUnit) {
+    easierBtn = `
+      <button class="btn btn-green" style="width:100%;margin-top:10px;" onclick="window.goEasierUnit('${easierUnit.id}')">
+        <i class="icon">arrow_forward</i> "${escapeHtml(easierUnit.name)}" 해보기
+      </button>`;
+  }
+
   content.innerHTML = `
     <div style="text-align:center;">
       <div class="coach-modal-mascot">${window.mascotSVG(mood || 'hello', 100)}</div>
       <div class="coach-bubble-text">${escapeHtml(message)}</div>
-      <button class="btn btn-blue" style="width:100%;margin-top:16px;" onclick="window.closeCoachModal()">
-        좋아! <i class="icon">thumb_up</i>
+      ${easierBtn}
+      <button class="btn ${easierUnit ? 'btn-ghost' : 'btn-blue'}" style="width:100%;margin-top:${easierUnit ? '8' : '16'}px;" onclick="window.closeCoachModal()">
+        ${easierUnit ? '괜찮아, 계속할래' : '좋아!'} ${easierUnit ? '' : '<i class="icon">thumb_up</i>'}
       </button>
     </div>`;
   modal.classList.add('active');
 }
+
+// 쉬운 단원으로 바로 이동
+window.goEasierUnit = function(unitId) {
+  window.closeCoachModal();
+  if (window.startUnitSession(unitId)) {
+    window.show('problem-screen');
+    setTimeout(loadCurrentProblem, 50);
+  }
+};
 
 window.closeCoachModal = function() {
   document.getElementById('coach-modal').classList.remove('active');
@@ -1358,21 +1379,38 @@ function showSessionResult() {
   // 약한 콘페티 (성취감)
   if (correctCount > total / 2) spawnConfetti();
 
-  // 막힌 단원이 있으면, 잠깐 뒤 마리가 위로 (결과 화면을 먼저 보게 1.2초 딜레이)
+  // 막힌 단원이 있으면, 잠깐 뒤 마리가 위로 + 더 쉬운 단원 권유 (결과 화면 먼저 보게 1.2초 딜레이)
   if (s._struggledUnit) {
     const uid = s._struggledUnit;
     s._struggledUnit = null; // 중복 방지
-    const units = window.getUnitsBySubjectGrade(window.MATHLAND_STATE.currentSubject, window.MATHLAND_STATE.currentGrade);
+    const st = window.MATHLAND_STATE;
+    const units = window.getUnitsBySubjectGrade(st.currentSubject, st.currentGrade);
     const u = units.find(x => x.id === uid);
-    const struggle = (window.MATHLAND_STATE.unitStruggle || {})[uid] || {};
+    const struggle = (st.unitStruggle || {})[uid] || {};
+
+    // 같은 학년에서 "더 쉬운 단원" 후보 찾기:
+    // 1순위 = 막힌 단원보다 앞 단원(기초) 중 이해도가 가장 높은 것
+    // 2순위 = 전체 단원 중 이해도 가장 높은 것 (막힌 단원 제외)
+    let easierUnit = null;
+    if (u) {
+      const earlier = units.filter(x => x.unitNum < u.unitNum && x.id !== uid);
+      const pool = earlier.length > 0 ? earlier : units.filter(x => x.id !== uid);
+      easierUnit = pool.reduce((best, x) => {
+        const m = st.unitMastery[x.id] || 0;
+        const bm = best ? (st.unitMastery[best.id] || 0) : -1;
+        return m > bm ? x : best;
+      }, null);
+    }
+
     setTimeout(async () => {
-      // 로딩 없이 조용히 받아와서, 받으면 띄움
       const msg = await window.getCoaching('stuck', {
         unitName: u ? u.name : '이 단원',
         recentWrong: struggle.wrong || 0,
         totalAttempts: struggle.attempts || 0,
+        easierUnitName: easierUnit ? easierUnit.name : null,
       });
-      showCoachMessage(msg, 'sad');
+      // 쉬운 단원 추천이 있으면, 코칭 모달에 "그 단원 해보기" 버튼도 같이
+      showCoachMessage(msg, 'sad', easierUnit || null);
     }, 1200);
   }
 }
@@ -1735,7 +1773,8 @@ function handleAction(action, target) {
       window.show('subject-select-screen');
       break;
     case 'to-grade-select':
-      window.show('grade-select-screen');
+      // 학년 선택 화면은 폐지됨 → 과목 선택으로
+      window.show('subject-select-screen');
       break;
     case 'ai-recommend':
       if (!window.MATHLAND_STATE.diagnosticDone) {

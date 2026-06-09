@@ -36,12 +36,15 @@ ${unitList}
   }
 
   if (type === 'stuck') {
-    // payload: { unitName, recentWrong, totalAttempts }
+    // payload: { unitName, recentWrong, totalAttempts, easierUnitName }
+    const easierLine = payload.easierUnitName
+      ? `\n\n만약 학생이 너무 힘들어하면, "${payload.easierUnitName}" 단원처럼 좀 더 익숙한 걸 먼저 다지고 오는 것도 좋다고 부드럽게 권해줘. 단, 강요하지 말고 선택은 학생 몫이라는 느낌으로.`
+      : '';
     return `${PERSONA}
 
 학생이 "${payload.unitName}" 단원에서 계속 어려워하고 있어. 최근 ${payload.totalAttempts || 0}번 시도 중 ${payload.recentWrong || 0}번 틀렸어.
 
-지금 학생이 막혀서 좀 지쳐 보여. 정답이나 푸는 방법은 절대 알려주지 말고, 잠깐 쉬어가거나 마음을 다잡을 수 있게 따뜻하게 응원해줘. "틀려도 괜찮아", "천천히 해도 돼" 같은 메시지로 부담을 덜어주는 게 좋아.`;
+지금 학생이 막혀서 좀 지쳐 보여. 정답이나 푸는 방법은 절대 알려주지 말고, 잠깐 쉬어가거나 마음을 다잡을 수 있게 따뜻하게 응원해줘. "틀려도 괜찮아", "천천히 해도 돼" 같은 메시지로 부담을 덜어주는 게 좋아. 학년을 낮추라는 말은 절대 하지 마. 같은 학년 안에서 더 쉬운 내용을 권하는 정도만.${easierLine}`;
   }
 
   return `${PERSONA}\n\n학생에게 짧은 응원 한마디 해줘.`;
